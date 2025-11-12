@@ -2,10 +2,9 @@
 Unit tests for citation parser.
 """
 
-import pytest
 
-from judicaita.citation_mapping.parser import CitationParser
 from judicaita.citation_mapping.models import CitationType, Jurisdiction
+from judicaita.citation_mapping.parser import CitationParser
 
 
 class TestCitationParser:
@@ -21,8 +20,7 @@ class TestCitationParser:
 
         # Check for Brown v. Board of Education
         brown_citations = [
-            c for c in citations
-            if "Brown v. Board of Education" in c.citation.raw_citation
+            c for c in citations if "Brown v. Board of Education" in c.citation.raw_citation
         ]
         assert len(brown_citations) > 0
         assert brown_citations[0].citation.citation_type == CitationType.CASE
@@ -34,8 +32,7 @@ class TestCitationParser:
 
         # Check for statute citations
         statute_citations = [
-            c for c in citations
-            if c.citation.citation_type == CitationType.STATUTE
+            c for c in citations if c.citation.citation_type == CitationType.STATUTE
         ]
         assert len(statute_citations) >= 2
 

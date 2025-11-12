@@ -6,7 +6,7 @@ and mapping legal citations to their sources.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -40,18 +40,16 @@ class Citation(BaseModel):
     raw_citation: str = Field(..., description="Original citation text")
     citation_type: CitationType = Field(..., description="Type of citation")
     jurisdiction: Jurisdiction = Field(..., description="Legal jurisdiction")
-    case_name: Optional[str] = Field(None, description="Case name (for case citations)")
-    volume: Optional[str] = Field(None, description="Volume number")
-    reporter: Optional[str] = Field(None, description="Reporter abbreviation")
-    page: Optional[str] = Field(None, description="Page number")
-    year: Optional[int] = Field(None, description="Year of decision/enactment")
-    court: Optional[str] = Field(None, description="Court name")
-    statute_section: Optional[str] = Field(None, description="Statute section")
+    case_name: str | None = Field(None, description="Case name (for case citations)")
+    volume: str | None = Field(None, description="Volume number")
+    reporter: str | None = Field(None, description="Reporter abbreviation")
+    page: str | None = Field(None, description="Page number")
+    year: int | None = Field(None, description="Year of decision/enactment")
+    court: str | None = Field(None, description="Court name")
+    statute_section: str | None = Field(None, description="Statute section")
     is_valid: bool = Field(default=False, description="Whether citation is validated")
-    url: Optional[str] = Field(None, description="URL to full text")
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata"
-    )
+    url: str | None = Field(None, description="URL to full text")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class CitationMatch(BaseModel):
@@ -61,18 +59,14 @@ class CitationMatch(BaseModel):
     context: str = Field(..., description="Surrounding text context")
     start_pos: int = Field(..., description="Start position in document")
     end_pos: int = Field(..., description="End position in document")
-    relevance_score: float = Field(
-        default=1.0, ge=0.0, le=1.0, description="Relevance to query"
-    )
+    relevance_score: float = Field(default=1.0, ge=0.0, le=1.0, description="Relevance to query")
 
 
 class CitationGraph(BaseModel):
     """Graph of citation relationships."""
 
-    nodes: List[Citation] = Field(default_factory=list, description="Citation nodes")
-    edges: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Citation relationships"
-    )
+    nodes: list[Citation] = Field(default_factory=list, description="Citation nodes")
+    edges: list[dict[str, Any]] = Field(default_factory=list, description="Citation relationships")
 
     def add_citation(self, citation: Citation) -> None:
         """Add a citation to the graph."""
@@ -98,7 +92,7 @@ class CitationGraph(BaseModel):
         if edge not in self.edges:
             self.edges.append(edge)
 
-    def get_related_citations(self, citation: Citation) -> List[Citation]:
+    def get_related_citations(self, citation: Citation) -> list[Citation]:
         """Get all citations related to a given citation."""
         related = []
         citation_str = citation.raw_citation

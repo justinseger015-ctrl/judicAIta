@@ -2,7 +2,6 @@
 Plain-English summary generator using Google Gemma and Tunix.
 """
 
-from typing import List, Optional
 
 from loguru import logger
 
@@ -67,16 +66,11 @@ class SummaryGenerator:
         Raises:
             ModelInferenceError: If summary generation fails
         """
-        logger.info(
-            f"Generating {summary_level.value} summary at "
-            f"{reading_level.value} level"
-        )
+        logger.info(f"Generating {summary_level.value} summary at " f"{reading_level.value} level")
 
         try:
             # Generate main summary
-            summary_text = await self._generate_summary_text(
-                text, summary_level, reading_level
-            )
+            summary_text = await self._generate_summary_text(text, summary_level, reading_level)
 
             # Extract key takeaways
             key_takeaways = await self._extract_key_takeaways(text)
@@ -85,7 +79,7 @@ class SummaryGenerator:
             key_terms = await self._identify_key_terms(text)
 
             # Generate sections if requested
-            sections: List[SummarySection] = []
+            sections: list[SummarySection] = []
             if include_sections and summary_level in [
                 SummaryLevel.MEDIUM,
                 SummaryLevel.DETAILED,
@@ -152,7 +146,7 @@ class SummaryGenerator:
 
         return placeholder
 
-    async def _extract_key_takeaways(self, text: str) -> List[str]:
+    async def _extract_key_takeaways(self, text: str) -> list[str]:
         """Extract key takeaways from the text."""
         # TODO: Use actual model for extraction
         return [
@@ -172,7 +166,7 @@ class SummaryGenerator:
 
     async def _generate_sections(
         self, text: str, reading_level: ReadingLevel
-    ) -> List[SummarySection]:
+    ) -> list[SummarySection]:
         """Generate detailed sections for the summary."""
         # TODO: Use actual model for section generation
         return [

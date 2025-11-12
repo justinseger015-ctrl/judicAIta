@@ -3,8 +3,6 @@ Reasoning trace generator using Google Gemma and Tunix.
 """
 
 import uuid
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -50,7 +48,7 @@ class ReasoningTraceGenerator:
         self,
         query: str,
         context: str,
-        citations: Optional[List[str]] = None,
+        citations: list[str] | None = None,
     ) -> ReasoningTrace:
         """
         Generate a reasoning trace for a legal query.
@@ -124,7 +122,7 @@ class ReasoningTraceGenerator:
 
         # TODO: Use actual model for analysis
         # For now, create a structured step
-        description = f"Analyzing legal query to identify key issues and relevant legal areas"
+        description = "Analyzing legal query to identify key issues and relevant legal areas"
 
         return ReasoningStep(
             step_id=step_id,
@@ -139,9 +137,7 @@ class ReasoningTraceGenerator:
             confidence_score=0.85,
         )
 
-    async def _lookup_citations(
-        self, citations: List[str], query: str
-    ) -> ReasoningStep:
+    async def _lookup_citations(self, citations: list[str], query: str) -> ReasoningStep:
         """Look up and validate citations."""
         step_id = str(uuid.uuid4())
 
@@ -152,7 +148,7 @@ class ReasoningTraceGenerator:
             input_data={"citations": citations, "query": query},
             output_data={
                 "validated_citations": citations,
-                "relevance_scores": {cit: 0.8 for cit in citations},
+                "relevance_scores": dict.fromkeys(citations, 0.8),
                 "summary": f"Validated {len(citations)} citations",
             },
             confidence_score=0.9,
@@ -160,7 +156,7 @@ class ReasoningTraceGenerator:
         )
 
     async def _perform_inference(
-        self, query: str, context: str, citations: List[str]
+        self, query: str, context: str, citations: list[str]
     ) -> ReasoningStep:
         """Perform legal reasoning and inference."""
         step_id = str(uuid.uuid4())
@@ -184,7 +180,7 @@ class ReasoningTraceGenerator:
             sources=citations,
         )
 
-    async def _generate_conclusion(self, steps: List[ReasoningStep]) -> ReasoningStep:
+    async def _generate_conclusion(self, steps: list[ReasoningStep]) -> ReasoningStep:
         """Generate final conclusion based on all reasoning steps."""
         step_id = str(uuid.uuid4())
 
@@ -207,7 +203,7 @@ class ReasoningTraceGenerator:
             confidence_score=0.85,
         )
 
-    def _calculate_overall_confidence(self, steps: List[ReasoningStep]) -> float:
+    def _calculate_overall_confidence(self, steps: list[ReasoningStep]) -> float:
         """Calculate overall confidence based on individual step confidences."""
         if not steps:
             return 0.0

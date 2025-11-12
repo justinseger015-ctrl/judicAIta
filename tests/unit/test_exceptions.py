@@ -2,7 +2,6 @@
 Unit tests for exceptions module.
 """
 
-import pytest
 
 from judicaita.core.exceptions import (
     AuditError,

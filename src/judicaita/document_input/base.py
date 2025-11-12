@@ -7,7 +7,7 @@ It provides a unified interface for extracting text and metadata from legal docu
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -18,14 +18,14 @@ class DocumentMetadata(BaseModel):
     filename: str = Field(..., description="Original filename")
     file_type: str = Field(..., description="Document file type")
     file_size_bytes: int = Field(..., description="File size in bytes")
-    page_count: Optional[int] = Field(None, description="Number of pages")
-    author: Optional[str] = Field(None, description="Document author")
-    title: Optional[str] = Field(None, description="Document title")
-    subject: Optional[str] = Field(None, description="Document subject")
-    created_date: Optional[str] = Field(None, description="Creation date")
-    modified_date: Optional[str] = Field(None, description="Last modified date")
-    keywords: List[str] = Field(default_factory=list, description="Document keywords")
-    custom_properties: Dict[str, Any] = Field(
+    page_count: int | None = Field(None, description="Number of pages")
+    author: str | None = Field(None, description="Document author")
+    title: str | None = Field(None, description="Document title")
+    subject: str | None = Field(None, description="Document subject")
+    created_date: str | None = Field(None, description="Creation date")
+    modified_date: str | None = Field(None, description="Last modified date")
+    keywords: list[str] = Field(default_factory=list, description="Document keywords")
+    custom_properties: dict[str, Any] = Field(
         default_factory=dict, description="Custom document properties"
     )
 
@@ -35,17 +35,11 @@ class DocumentContent(BaseModel):
 
     text: str = Field(..., description="Extracted text content")
     metadata: DocumentMetadata = Field(..., description="Document metadata")
-    sections: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Document sections"
-    )
-    tables: List[Dict[str, Any]] = Field(default_factory=list, description="Extracted tables")
-    images: List[Dict[str, Any]] = Field(
-        default_factory=list, description="Image references"
-    )
-    footnotes: List[str] = Field(default_factory=list, description="Footnotes")
-    citations: List[str] = Field(
-        default_factory=list, description="Detected citations"
-    )
+    sections: list[dict[str, Any]] = Field(default_factory=list, description="Document sections")
+    tables: list[dict[str, Any]] = Field(default_factory=list, description="Extracted tables")
+    images: list[dict[str, Any]] = Field(default_factory=list, description="Image references")
+    footnotes: list[str] = Field(default_factory=list, description="Footnotes")
+    citations: list[str] = Field(default_factory=list, description="Detected citations")
 
 
 class DocumentProcessor(ABC):

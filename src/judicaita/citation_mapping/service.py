@@ -2,7 +2,6 @@
 Citation mapping service for validating and enriching citations.
 """
 
-from typing import Dict, List, Optional
 
 from loguru import logger
 
@@ -24,11 +23,11 @@ class CitationMappingService:
         """Initialize the citation mapping service."""
         self.settings = get_settings()
         self.parser = CitationParser(jurisdiction=self.settings.legal_jurisdiction)
-        self._citation_cache: Dict[str, Citation] = {}
+        self._citation_cache: dict[str, Citation] = {}
 
     async def extract_and_map_citations(
         self, text: str, validate: bool = True
-    ) -> List[CitationMatch]:
+    ) -> list[CitationMatch]:
         """
         Extract and map citations from text.
 
@@ -95,9 +94,7 @@ class CitationMappingService:
             logger.warning(f"Failed to validate citation {citation.raw_citation}: {e}")
             citation.is_valid = False
 
-    async def build_citation_graph(
-        self, citations: List[Citation]
-    ) -> CitationGraph:
+    async def build_citation_graph(self, citations: list[Citation]) -> CitationGraph:
         """
         Build a citation graph showing relationships between citations.
 
@@ -122,12 +119,11 @@ class CitationMappingService:
         # - Tracking statutory amendments
 
         logger.info(
-            f"Built citation graph with {len(graph.nodes)} nodes and "
-            f"{len(graph.edges)} edges"
+            f"Built citation graph with {len(graph.nodes)} nodes and " f"{len(graph.edges)} edges"
         )
         return graph
 
-    async def validate_citation(self, citation_str: str) -> Optional[Citation]:
+    async def validate_citation(self, citation_str: str) -> Citation | None:
         """
         Validate a single citation string.
 

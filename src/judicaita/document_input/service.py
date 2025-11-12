@@ -6,7 +6,6 @@ including PDF and Word documents.
 """
 
 from pathlib import Path
-from typing import Dict, Type
 
 from loguru import logger
 
@@ -31,7 +30,7 @@ class DocumentInputService:
             max_size_bytes: Maximum allowed file size in bytes
         """
         self.max_size_bytes = max_size_bytes
-        self._processors: Dict[str, DocumentProcessor] = {
+        self._processors: dict[str, DocumentProcessor] = {
             "pdf": PDFProcessor(max_size_bytes),
             "docx": WordProcessor(max_size_bytes),
             "doc": WordProcessor(max_size_bytes),

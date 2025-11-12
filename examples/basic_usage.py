@@ -6,11 +6,10 @@ its content, citations, and metadata.
 """
 
 import asyncio
-from pathlib import Path
 
-from judicaita.document_input import DocumentInputService
+from judicaita.audit_logs import AuditEventType, AuditLogger
 from judicaita.citation_mapping import CitationMappingService
-from judicaita.audit_logs import AuditLogger, AuditEventType
+from judicaita.document_input import DocumentInputService
 
 
 async def main():

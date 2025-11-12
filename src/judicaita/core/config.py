@@ -7,7 +7,7 @@ support and validation.
 
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Literal
+from typing import Literal
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,18 +31,14 @@ class Settings(BaseSettings):
     log_format: Literal["json", "text"] = Field(default="json", description="Log format")
 
     # Google Tunix & Gemma Configuration
-    google_api_key: str = Field(
-        default="", description="Google API key for Tunix and Gemma"
-    )
+    google_api_key: str = Field(default="", description="Google API key for Tunix and Gemma")
     gemma_model_name: str = Field(default="gemma-3n", description="Gemma model name")
     tunix_endpoint: str = Field(
         default="https://api.tunix.google.com/v1", description="Tunix API endpoint"
     )
 
     # Model Configuration
-    model_temperature: float = Field(
-        default=0.3, ge=0.0, le=2.0, description="Model temperature"
-    )
+    model_temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Model temperature")
     model_max_tokens: int = Field(
         default=2048, ge=1, le=8192, description="Maximum tokens for generation"
     )
@@ -52,7 +48,7 @@ class Settings(BaseSettings):
     max_document_size_mb: int = Field(
         default=50, ge=1, le=500, description="Maximum document size in MB"
     )
-    supported_formats: List[str] = Field(
+    supported_formats: list[str] = Field(
         default=["pdf", "docx", "doc", "txt"], description="Supported document formats"
     )
     ocr_enabled: bool = Field(default=False, description="Enable OCR for scanned documents")
@@ -71,9 +67,7 @@ class Settings(BaseSettings):
     # Cache Configuration
     cache_enabled: bool = Field(default=True, description="Enable caching")
     cache_ttl: int = Field(default=3600, ge=0, description="Cache TTL in seconds")
-    redis_url: str = Field(
-        default="redis://localhost:6379/0", description="Redis connection URL"
-    )
+    redis_url: str = Field(default="redis://localhost:6379/0", description="Redis connection URL")
 
     # Citation Database
     citation_database_path: Path = Field(
@@ -97,23 +91,17 @@ class Settings(BaseSettings):
     )
 
     # Security
-    secret_key: str = Field(
-        default="change-me-in-production", description="Secret key for JWT"
-    )
+    secret_key: str = Field(default="change-me-in-production", description="Secret key for JWT")
     jwt_algorithm: str = Field(default="HS256", description="JWT algorithm")
-    jwt_expiration_hours: int = Field(
-        default=24, ge=1, description="JWT expiration in hours"
-    )
-    cors_origins: List[str] = Field(
+    jwt_expiration_hours: int = Field(default=24, ge=1, description="JWT expiration in hours")
+    cors_origins: list[str] = Field(
         default=["http://localhost:3000", "http://localhost:8080"],
         description="Allowed CORS origins",
     )
 
     # Rate Limiting
     rate_limit_enabled: bool = Field(default=True, description="Enable rate limiting")
-    rate_limit_requests: int = Field(
-        default=100, ge=1, description="Maximum requests per window"
-    )
+    rate_limit_requests: int = Field(default=100, ge=1, description="Maximum requests per window")
     rate_limit_window_seconds: int = Field(
         default=60, ge=1, description="Rate limit window in seconds"
     )
@@ -122,18 +110,12 @@ class Settings(BaseSettings):
     enable_reasoning_trace: bool = Field(
         default=True, description="Enable reasoning trace generation"
     )
-    enable_citation_mapping: bool = Field(
-        default=True, description="Enable citation mapping"
-    )
+    enable_citation_mapping: bool = Field(default=True, description="Enable citation mapping")
     enable_plain_english_summary: bool = Field(
         default=True, description="Enable plain English summaries"
     )
-    enable_compliance_audit: bool = Field(
-        default=True, description="Enable compliance auditing"
-    )
-    experimental_features: bool = Field(
-        default=False, description="Enable experimental features"
-    )
+    enable_compliance_audit: bool = Field(default=True, description="Enable compliance auditing")
+    experimental_features: bool = Field(default=False, description="Enable experimental features")
 
     @field_validator("google_api_key")
     @classmethod
@@ -155,7 +137,7 @@ class Settings(BaseSettings):
         return self.max_document_size_mb * 1024 * 1024
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> Settings:
     """
     Get cached settings instance.

@@ -5,7 +5,7 @@ This module defines a hierarchy of exceptions used throughout the application
 to provide clear error handling and debugging information.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class JudicaitaError(Exception):
@@ -14,8 +14,8 @@ class JudicaitaError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None,
+        error_code: str | None = None,
+        details: dict[str, Any] | None = None,
     ) -> None:
         """
         Initialize the exception.
@@ -30,7 +30,7 @@ class JudicaitaError(Exception):
         self.details = details or {}
         super().__init__(self.message)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert exception to dictionary for API responses."""
         return {
             "error": self.error_code,

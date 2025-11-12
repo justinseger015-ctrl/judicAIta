@@ -3,11 +3,9 @@ Command-line interface for Judicaita.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
-from rich.table import Table
 
 from judicaita import __version__
 
@@ -29,7 +27,7 @@ def version() -> None:
 @app.command()
 def process_document(
     file_path: Path = typer.Argument(..., help="Path to document to process"),
-    output_dir: Optional[Path] = typer.Option(
+    output_dir: Path | None = typer.Option(
         None, "--output", "-o", help="Output directory for results"
     ),
     generate_summary: bool = typer.Option(
@@ -38,9 +36,7 @@ def process_document(
     extract_citations: bool = typer.Option(
         True, "--citations/--no-citations", help="Extract and map citations"
     ),
-    create_trace: bool = typer.Option(
-        True, "--trace/--no-trace", help="Create reasoning trace"
-    ),
+    create_trace: bool = typer.Option(True, "--trace/--no-trace", help="Create reasoning trace"),
 ) -> None:
     """
     Process a legal document and generate analysis.
@@ -55,17 +51,13 @@ def process_document(
     console.print(f"Processing document: {file_path}", style="bold")
 
     # TODO: Implement document processing pipeline
-    console.print(
-        "[yellow]Document processing is pending model integration.[/yellow]"
-    )
+    console.print("[yellow]Document processing is pending model integration.[/yellow]")
 
 
 @app.command()
 def analyze_query(
     query: str = typer.Argument(..., help="Legal query to analyze"),
-    context_file: Optional[Path] = typer.Option(
-        None, "--context", "-c", help="Context document"
-    ),
+    context_file: Path | None = typer.Option(None, "--context", "-c", help="Context document"),
     output_format: str = typer.Option(
         "markdown", "--format", "-f", help="Output format (markdown, json)"
     ),
@@ -87,7 +79,7 @@ def analyze_query(
 @app.command()
 def audit_report(
     days: int = typer.Option(7, "--days", "-d", help="Number of days to include"),
-    output_file: Optional[Path] = typer.Option(
+    output_file: Path | None = typer.Option(
         None, "--output", "-o", help="Output file for report"
     ),
 ) -> None:
@@ -146,9 +138,7 @@ def serve(
             reload=reload,
         )
     except ImportError:
-        console.print(
-            "[red]API module not yet implemented. Check back soon![/red]"
-        )
+        console.print("[red]API module not yet implemented. Check back soon![/red]")
 
 
 def main() -> None:

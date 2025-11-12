@@ -3,7 +3,6 @@ Citation parser for extracting and parsing legal citations.
 """
 
 import re
-from typing import List, Optional, Tuple
 
 from loguru import logger
 
@@ -26,17 +25,17 @@ class CitationParser:
     # US case citation patterns
     US_CASE_PATTERNS = [
         # e.g., "Brown v. Board of Education, 347 U.S. 483"
-        r'([A-Z][A-Za-z\s\.]+\s+v\.\s+[A-Z][A-Za-z\s\.]+),\s*(\d+)\s+([A-Z]\.[A-Za-z\.]+)\s+(\d+)',
+        r"([A-Z][A-Za-z\s\.]+\s+v\.\s+[A-Z][A-Za-z\s\.]+),\s*(\d+)\s+([A-Z]\.[A-Za-z\.]+)\s+(\d+)",
         # e.g., "123 F.3d 456"
-        r'(\d+)\s+([A-Z]\.[A-Za-z\.\d]+)\s+(\d+)',
+        r"(\d+)\s+([A-Z]\.[A-Za-z\.\d]+)\s+(\d+)",
     ]
 
     # US statute citation patterns
     US_STATUTE_PATTERNS = [
         # e.g., "42 U.S.C. § 1983"
-        r'(\d+)\s+U\.S\.C\.\s+§\s*(\d+[a-z]*)',
+        r"(\d+)\s+U\.S\.C\.\s+§\s*(\d+[a-z]*)",
         # e.g., "18 U.S.C. 1001"
-        r'(\d+)\s+U\.S\.C\.\s+(\d+[a-z]*)',
+        r"(\d+)\s+U\.S\.C\.\s+(\d+[a-z]*)",
     ]
 
     def __init__(self, jurisdiction: str = "US") -> None:
@@ -48,7 +47,7 @@ class CitationParser:
         """
         self.jurisdiction = jurisdiction
 
-    def extract_citations(self, text: str) -> List[CitationMatch]:
+    def extract_citations(self, text: str) -> list[CitationMatch]:
         """
         Extract all citations from text.
 
@@ -58,7 +57,7 @@ class CitationParser:
         Returns:
             List of citation matches with context
         """
-        citations: List[CitationMatch] = []
+        citations: list[CitationMatch] = []
 
         # Extract case citations
         citations.extend(self._extract_case_citations(text))
@@ -69,9 +68,9 @@ class CitationParser:
         logger.info(f"Extracted {len(citations)} citations from text")
         return citations
 
-    def _extract_case_citations(self, text: str) -> List[CitationMatch]:
+    def _extract_case_citations(self, text: str) -> list[CitationMatch]:
         """Extract case citations from text."""
-        citations: List[CitationMatch] = []
+        citations: list[CitationMatch] = []
 
         for pattern in self.US_CASE_PATTERNS:
             for match in re.finditer(pattern, text):
@@ -84,9 +83,9 @@ class CitationParser:
 
         return citations
 
-    def _extract_statute_citations(self, text: str) -> List[CitationMatch]:
+    def _extract_statute_citations(self, text: str) -> list[CitationMatch]:
         """Extract statute citations from text."""
-        citations: List[CitationMatch] = []
+        citations: list[CitationMatch] = []
 
         for pattern in self.US_STATUTE_PATTERNS:
             for match in re.finditer(pattern, text):
@@ -99,9 +98,7 @@ class CitationParser:
 
         return citations
 
-    def _parse_case_citation(
-        self, match: re.Match, text: str
-    ) -> Optional[CitationMatch]:
+    def _parse_case_citation(self, match: re.Match, text: str) -> CitationMatch | None:
         """Parse a case citation match."""
         raw_citation = match.group(0)
         groups = match.groups()
@@ -137,9 +134,7 @@ class CitationParser:
             end_pos=match.end(),
         )
 
-    def _parse_statute_citation(
-        self, match: re.Match, text: str
-    ) -> Optional[CitationMatch]:
+    def _parse_statute_citation(self, match: re.Match, text: str) -> CitationMatch | None:
         """Parse a statute citation match."""
         raw_citation = match.group(0)
         groups = match.groups()
@@ -176,9 +171,7 @@ class CitationParser:
         else:
             return Jurisdiction.US_STATE
 
-    def _get_context(
-        self, text: str, start: int, end: int, context_chars: int = 100
-    ) -> str:
+    def _get_context(self, text: str, start: int, end: int, context_chars: int = 100) -> str:
         """Get surrounding context for a citation."""
         context_start = max(0, start - context_chars)
         context_end = min(len(text), end + context_chars)
@@ -190,7 +183,7 @@ class CitationParser:
 
         return context
 
-    def parse_single_citation(self, citation_str: str) -> Optional[Citation]:
+    def parse_single_citation(self, citation_str: str) -> Citation | None:
         """
         Parse a single citation string.
 

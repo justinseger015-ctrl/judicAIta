@@ -21,11 +21,11 @@ __license__ = "Apache 2.0"
 
 from judicaita.core.config import Settings, get_settings
 from judicaita.core.exceptions import (
-    JudicaitaError,
-    DocumentProcessingError,
-    ModelInferenceError,
-    CitationError,
     AuditError,
+    CitationError,
+    DocumentProcessingError,
+    JudicaitaError,
+    ModelInferenceError,
 )
 
 __all__ = [

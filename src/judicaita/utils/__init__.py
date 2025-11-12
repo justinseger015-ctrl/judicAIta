@@ -25,7 +25,7 @@ def sanitize_filename(filename: str) -> str:
     # Limit length
     if len(sanitized) > 255:
         name, ext = Path(sanitized).stem, Path(sanitized).suffix
-        sanitized = name[:255 - len(ext)] + ext
+        sanitized = name[: 255 - len(ext)] + ext
 
     return sanitized
 
@@ -96,9 +96,7 @@ def parse_timestamp(timestamp_str: str, format_str: str = "%Y-%m-%d %H:%M:%S") -
     return datetime.strptime(timestamp_str, format_str)
 
 
-def chunk_text(
-    text: str, chunk_size: int = 1000, overlap: int = 100
-) -> List[str]:
+def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 100) -> list[str]:
     """
     Split text into overlapping chunks.
 
@@ -110,7 +108,7 @@ def chunk_text(
     Returns:
         List of text chunks
     """
-    chunks: List[str] = []
+    chunks: list[str] = []
     start = 0
 
     while start < len(text):
@@ -121,9 +119,7 @@ def chunk_text(
     return chunks
 
 
-def extract_metadata_from_dict(
-    data: Dict[str, Any], prefix: str = ""
-) -> Dict[str, Any]:
+def extract_metadata_from_dict(data: dict[str, Any], prefix: str = "") -> dict[str, Any]:
     """
     Flatten nested dictionary for metadata extraction.
 
@@ -134,7 +130,7 @@ def extract_metadata_from_dict(
     Returns:
         Flattened dictionary
     """
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
 
     for key, value in data.items():
         new_key = f"{prefix}.{key}" if prefix else key

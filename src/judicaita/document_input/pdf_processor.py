@@ -3,7 +3,7 @@ PDF document processor using pdfplumber and pypdf.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from loguru import logger
 
@@ -57,10 +57,10 @@ class PDFProcessor(DocumentProcessor):
             metadata = await self._extract_metadata(file_path)
 
             # Extract content using pdfplumber
-            text_content: List[str] = []
-            sections: List[Dict[str, Any]] = []
-            tables: List[Dict[str, Any]] = []
-            images: List[Dict[str, Any]] = []
+            text_content: list[str] = []
+            sections: list[dict[str, Any]] = []
+            tables: list[dict[str, Any]] = []
+            images: list[dict[str, Any]] = []
 
             with pdfplumber.open(file_path) as pdf:
                 metadata.page_count = len(pdf.pages)
@@ -70,30 +70,36 @@ class PDFProcessor(DocumentProcessor):
                     page_text = page.extract_text() or ""
                     if page_text:
                         text_content.append(page_text)
-                        sections.append({
-                            "page": page_num,
-                            "text": page_text,
-                            "type": "page",
-                        })
+                        sections.append(
+                            {
+                                "page": page_num,
+                                "text": page_text,
+                                "type": "page",
+                            }
+                        )
 
                     # Extract tables
                     page_tables = page.extract_tables()
                     for table_idx, table in enumerate(page_tables):
                         if table:
-                            tables.append({
-                                "page": page_num,
-                                "table_index": table_idx,
-                                "data": table,
-                            })
+                            tables.append(
+                                {
+                                    "page": page_num,
+                                    "table_index": table_idx,
+                                    "data": table,
+                                }
+                            )
 
                     # Track images
                     if hasattr(page, "images") and page.images:
                         for img_idx, img in enumerate(page.images):
-                            images.append({
-                                "page": page_num,
-                                "image_index": img_idx,
-                                "bbox": img.get("bbox", []),
-                            })
+                            images.append(
+                                {
+                                    "page": page_num,
+                                    "image_index": img_idx,
+                                    "bbox": img.get("bbox", []),
+                                }
+                            )
 
             full_text = "\n\n".join(text_content)
 
@@ -150,7 +156,7 @@ class PDFProcessor(DocumentProcessor):
                 file_size_bytes=file_path.stat().st_size,
             )
 
-    def _extract_citations(self, text: str) -> List[str]:
+    def _extract_citations(self, text: str) -> list[str]:
         """
         Extract legal citations from text using regex patterns.
 
@@ -159,14 +165,14 @@ class PDFProcessor(DocumentProcessor):
         """
         import re
 
-        citations: List[str] = []
+        citations: list[str] = []
 
         # Pattern for US case citations (e.g., "Brown v. Board of Education, 347 U.S. 483")
-        case_pattern = r'\b\d+\s+[A-Z]\.[A-Za-z\.]+\s+\d+\b'
+        case_pattern = r"\b\d+\s+[A-Z]\.[A-Za-z\.]+\s+\d+\b"
         citations.extend(re.findall(case_pattern, text))
 
         # Pattern for statute citations (e.g., "42 U.S.C. § 1983")
-        statute_pattern = r'\b\d+\s+U\.S\.C\.\s+§\s*\d+\b'
+        statute_pattern = r"\b\d+\s+U\.S\.C\.\s+§\s*\d+\b"
         citations.extend(re.findall(statute_pattern, text))
 
         return list(set(citations))  # Remove duplicates

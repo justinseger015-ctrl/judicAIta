@@ -3,7 +3,7 @@ Word document processor using python-docx.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 from loguru import logger
 
@@ -59,36 +59,40 @@ class WordProcessor(DocumentProcessor):
             metadata = await self._extract_metadata(file_path, doc)
 
             # Extract text content
-            text_content: List[str] = []
-            sections: List[Dict[str, Any]] = []
+            text_content: list[str] = []
+            sections: list[dict[str, Any]] = []
 
             for para_idx, paragraph in enumerate(doc.paragraphs):
                 if paragraph.text.strip():
                     text_content.append(paragraph.text)
-                    sections.append({
-                        "index": para_idx,
-                        "text": paragraph.text,
-                        "style": paragraph.style.name,
-                        "type": "paragraph",
-                    })
+                    sections.append(
+                        {
+                            "index": para_idx,
+                            "text": paragraph.text,
+                            "style": paragraph.style.name,
+                            "type": "paragraph",
+                        }
+                    )
 
             # Extract tables
-            tables: List[Dict[str, Any]] = []
+            tables: list[dict[str, Any]] = []
             for table_idx, table in enumerate(doc.tables):
                 table_data = []
                 for row in table.rows:
                     row_data = [cell.text for cell in row.cells]
                     table_data.append(row_data)
 
-                tables.append({
-                    "table_index": table_idx,
-                    "data": table_data,
-                    "rows": len(table.rows),
-                    "cols": len(table.rows[0].cells) if table.rows else 0,
-                })
+                tables.append(
+                    {
+                        "table_index": table_idx,
+                        "data": table_data,
+                        "rows": len(table.rows),
+                        "cols": len(table.rows[0].cells) if table.rows else 0,
+                    }
+                )
 
             # Extract footnotes (if present in document properties)
-            footnotes: List[str] = []
+            footnotes: list[str] = []
             # Note: python-docx has limited footnote support
 
             full_text = "\n\n".join(text_content)
@@ -142,7 +146,7 @@ class WordProcessor(DocumentProcessor):
                 file_size_bytes=file_path.stat().st_size,
             )
 
-    def _extract_citations(self, text: str) -> List[str]:
+    def _extract_citations(self, text: str) -> list[str]:
         """
         Extract legal citations from text using regex patterns.
 
@@ -151,14 +155,14 @@ class WordProcessor(DocumentProcessor):
         """
         import re
 
-        citations: List[str] = []
+        citations: list[str] = []
 
         # Pattern for US case citations
-        case_pattern = r'\b\d+\s+[A-Z]\.[A-Za-z\.]+\s+\d+\b'
+        case_pattern = r"\b\d+\s+[A-Z]\.[A-Za-z\.]+\s+\d+\b"
         citations.extend(re.findall(case_pattern, text))
 
         # Pattern for statute citations
-        statute_pattern = r'\b\d+\s+U\.S\.C\.\s+§\s*\d+\b'
+        statute_pattern = r"\b\d+\s+U\.S\.C\.\s+§\s*\d+\b"
         citations.extend(re.findall(statute_pattern, text))
 
         return list(set(citations))  # Remove duplicates

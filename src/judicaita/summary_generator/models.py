@@ -6,7 +6,7 @@ documents and analyses, making legal information more accessible.
 """
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -35,9 +35,7 @@ class SummarySection(BaseModel):
 
     title: str = Field(..., description="Section title")
     content: str = Field(..., description="Section content")
-    key_points: List[str] = Field(
-        default_factory=list, description="Key points in this section"
-    )
+    key_points: list[str] = Field(default_factory=list, description="Key points in this section")
 
 
 class LegalSummary(BaseModel):
@@ -47,18 +45,12 @@ class LegalSummary(BaseModel):
     summary: str = Field(..., description="Plain-English summary")
     summary_level: SummaryLevel = Field(..., description="Level of detail")
     reading_level: ReadingLevel = Field(..., description="Target reading level")
-    sections: List[SummarySection] = Field(
-        default_factory=list, description="Summary sections"
-    )
-    key_terms: Dict[str, str] = Field(
+    sections: list[SummarySection] = Field(default_factory=list, description="Summary sections")
+    key_terms: dict[str, str] = Field(
         default_factory=dict, description="Key legal terms and their definitions"
     )
-    key_takeaways: List[str] = Field(
-        default_factory=list, description="Main takeaways"
-    )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Additional metadata"
-    )
+    key_takeaways: list[str] = Field(default_factory=list, description="Main takeaways")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
     def to_markdown(self) -> str:
         """Convert summary to markdown format."""
@@ -71,30 +63,35 @@ class LegalSummary(BaseModel):
         ]
 
         if self.key_takeaways:
-            lines.extend([
-                "\n## Key Takeaways\n",
-                "\n".join(f"- {takeaway}" for takeaway in self.key_takeaways),
-            ])
+            lines.extend(
+                [
+                    "\n## Key Takeaways\n",
+                    "\n".join(f"- {takeaway}" for takeaway in self.key_takeaways),
+                ]
+            )
 
         if self.sections:
             lines.append("\n## Detailed Breakdown\n")
             for section in self.sections:
-                lines.extend([
-                    f"### {section.title}\n",
-                    section.content,
-                ])
+                lines.extend(
+                    [
+                        f"### {section.title}\n",
+                        section.content,
+                    ]
+                )
                 if section.key_points:
                     lines.append("\n**Key Points:**")
                     lines.extend(f"- {point}" for point in section.key_points)
                 lines.append("")
 
         if self.key_terms:
-            lines.extend([
-                "\n## Key Legal Terms\n",
-                "\n".join(
-                    f"**{term}:** {definition}"
-                    for term, definition in self.key_terms.items()
-                ),
-            ])
+            lines.extend(
+                [
+                    "\n## Key Legal Terms\n",
+                    "\n".join(
+                        f"**{term}:** {definition}" for term, definition in self.key_terms.items()
+                    ),
+                ]
+            )
 
         return "\n".join(lines)

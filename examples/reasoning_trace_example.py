@@ -52,7 +52,7 @@ async def main():
         citations=citations,
     )
 
-    print(f"\n2. Trace generated successfully!")
+    print("\n2. Trace generated successfully!")
     print(f"   Trace ID: {trace.trace_id}")
     print(f"   Overall Confidence: {trace.overall_confidence:.2%}")
     print(f"   Steps: {len(trace.steps)}")
