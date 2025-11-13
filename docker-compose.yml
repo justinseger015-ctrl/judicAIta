@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  judicaita:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: judicaita
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - DATABASE_URL=postgresql://judicaita:password@postgres:5432/judicaita
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - judicaita-network
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: judicaita-postgres
+    environment:
+      - POSTGRES_USER=judicaita
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=judicaita
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - judicaita-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: judicaita-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - judicaita-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  judicaita-network:
+    driver: bridge
