@@ -117,13 +117,14 @@ class Settings(BaseSettings):
     enable_compliance_audit: bool = Field(default=True, description="Enable compliance auditing")
     experimental_features: bool = Field(default=False, description="Enable experimental features")
 
-    @field_validator("google_api_key")
-    @classmethod
-    def validate_api_key(cls, v: str) -> str:
+    from pydantic import model_validator
+
+    @model_validator(mode="after")
+    def check_google_api_key(self):
         """Validate that API key is set in production."""
-        if not v and not cls.model_config.get("debug", False):
+        if not self.google_api_key and not self.debug:
             raise ValueError("google_api_key must be set in production")
-        return v
+        return self
 
     @field_validator("audit_log_path", "citation_database_path")
     @classmethod
