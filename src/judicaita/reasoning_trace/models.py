@@ -5,11 +5,16 @@ This module generates explainable reasoning traces for legal analysis,
 showing step-by-step how the AI arrives at its conclusions.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any
 
 from pydantic import BaseModel, Field
+
+
+def _utc_now() -> datetime:
+    """Return current UTC time using timezone-aware datetime."""
+    return datetime.now(timezone.utc)
 
 
 class ReasoningStepType(str, Enum):
@@ -37,12 +42,8 @@ class ReasoningStep(BaseModel):
         default=1.0, ge=0.0, le=1.0, description="Confidence score for this step"
     )
     sources: list[str] = Field(default_factory=list, description="Sources used in this step")
-    timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="When this step was executed"
-    )
-    parent_step_id: str | None = Field(
-        None, description="ID of parent step (for nested reasoning)"
-    )
+    timestamp: datetime = Field(default_factory=_utc_now, description="When this step was executed")
+    parent_step_id: str | None = Field(None, description="ID of parent step (for nested reasoning)")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
@@ -59,9 +60,7 @@ class ReasoningTrace(BaseModel):
         default=1.0, ge=0.0, le=1.0, description="Overall confidence in conclusion"
     )
     citations_used: list[str] = Field(default_factory=list, description="All citations referenced")
-    created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When trace was created"
-    )
+    created_at: datetime = Field(default_factory=_utc_now, description="When trace was created")
     model_info: dict[str, Any] = Field(
         default_factory=dict, description="Information about the model used"
     )
