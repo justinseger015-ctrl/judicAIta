@@ -47,9 +47,12 @@ class ReasoningTraceGenerator:
                 logger.info(f"Loading GRPO-tuned checkpoint from {self.checkpoint_path}")
                 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-                self._tokenizer = AutoTokenizer.from_pretrained(self.checkpoint_path)
+                self._tokenizer = AutoTokenizer.from_pretrained(
+                    self.checkpoint_path, revision="main"
+                )
                 self._model = AutoModelForCausalLM.from_pretrained(
                     self.checkpoint_path,
+                    revision="main",
                     device_map="auto",
                 )
                 logger.info("GRPO-tuned model loaded successfully")

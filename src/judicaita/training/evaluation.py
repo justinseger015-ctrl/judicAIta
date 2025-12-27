@@ -323,8 +323,10 @@ def evaluate_checkpoint(
     logger.info(f"Loading model from {checkpoint_path}")
 
     # Load model and tokenizer
-    model = AutoModelForCausalLM.from_pretrained(checkpoint_path, device_map="auto")
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
+    model = AutoModelForCausalLM.from_pretrained(
+        checkpoint_path, revision="main", device_map="auto"
+    )
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint_path, revision="main")
 
     # Create evaluation harness
     harness = EvaluationHarness()

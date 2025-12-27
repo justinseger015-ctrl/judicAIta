@@ -78,6 +78,10 @@ class TrainingConfig:
     # Seed for reproducibility
     seed: int = 42
 
+    # Revision pinning for reproducibility and security
+    model_revision: str | None = None  # Specific commit hash or "main" for base model
+    checkpoint_revision: str | None = None  # Specific commit hash for checkpoints
+
 
 class GRPOTrainer:
     """
@@ -123,7 +127,9 @@ class GRPOTrainer:
         logger.info(f"Initializing GRPO trainer with base model: {self.config.base_model}")
 
         # Load tokenizer
-        self.tokenizer = AutoTokenizer.from_pretrained(self.config.base_model)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.config.base_model, revision=self.config.model_revision
+        )
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
 
@@ -131,6 +137,7 @@ class GRPOTrainer:
         logger.info("Loading base model...")
         self.model = AutoModelForCausalLM.from_pretrained(
             self.config.base_model,
+            revision=self.config.model_revision,
             torch_dtype=torch.bfloat16 if self.config.bf16 else torch.float32,
             device_map=self.config.device,
         )
@@ -323,9 +330,7 @@ class GRPOTrainer:
 
         # Compute rewards for all rollouts
         rewards = []
-        for i, (prompt, rollout_responses) in enumerate(
-            zip(prompts, all_responses, strict=False)
-        ):
+        for i, (prompt, rollout_responses) in enumerate(zip(prompts, all_responses, strict=False)):
             reference = references[i] if i < len(references) else ""
             rollout_rewards = []
 
@@ -497,7 +502,11 @@ class GRPOTrainer:
         logger.info(f"Loading checkpoint from {checkpoint_path}")
 
         # Load model
-        self.model = AutoModelForCausalLM.from_pretrained(checkpoint_path)
-        self.tokenizer = AutoTokenizer.from_pretrained(checkpoint_path)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            checkpoint_path, revision=self.config.checkpoint_revision
+        )
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            checkpoint_path, revision=self.config.checkpoint_revision
+        )
 
         logger.info("Checkpoint loaded successfully")

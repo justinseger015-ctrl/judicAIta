@@ -82,7 +82,7 @@ class LegalBenchDataset:
 
         try:
             # Load the nguha/legalbench dataset
-            dataset = load_dataset("nguha/legalbench", cache_dir=cache_dir)
+            dataset = load_dataset("nguha/legalbench", cache_dir=cache_dir, revision="main")
 
             # Filter for reasoning-heavy tasks
             for task in self.tasks:
@@ -198,6 +198,7 @@ class PileOfLawDataset:
                         subset,
                         split=f"train[:{self.samples_per_subset}]",
                         cache_dir=cache_dir,
+                        revision="main",
                     )
 
                     # Extract text content
@@ -249,9 +250,10 @@ class SyntheticCoTGenerator:
         logger.info(f"Initializing CoT generator with model: {self.model_name}")
 
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+            self.tokenizer = AutoTokenizer.from_pretrained(self.model_name, revision="main")
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
+                revision="main",
                 torch_dtype="auto",
                 device_map=self.device,
             )
