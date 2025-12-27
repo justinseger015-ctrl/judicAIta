@@ -21,24 +21,48 @@ class ReasoningTraceGenerator:
 
     This class creates step-by-step reasoning traces that show how the AI
     arrives at its conclusions, making the decision-making process transparent.
+    
+    Supports loading GRPO-tuned checkpoints for improved reasoning performance.
     """
 
-    def __init__(self) -> None:
-        """Initialize the reasoning trace generator."""
+    def __init__(self, checkpoint_path: str | None = None) -> None:
+        """
+        Initialize the reasoning trace generator.
+        
+        Args:
+            checkpoint_path: Optional path to GRPO-tuned checkpoint
+        """
         self.settings = get_settings()
         self._model = None
+        self._tokenizer = None
+        self.checkpoint_path = checkpoint_path
 
     async def initialize(self) -> None:
         """Initialize the model and necessary resources."""
         try:
             logger.info("Initializing reasoning trace generator with Gemma 3n")
-            # TODO: Initialize actual Gemma model when available
-            # from langchain_google_genai import ChatGoogleGenerativeAI
-            # self._model = ChatGoogleGenerativeAI(
-            #     model=self.settings.gemma_model_name,
-            #     google_api_key=self.settings.google_api_key,
-            #     temperature=self.settings.model_temperature,
-            # )
+            
+            # Load GRPO-tuned checkpoint if provided
+            if self.checkpoint_path:
+                logger.info(f"Loading GRPO-tuned checkpoint from {self.checkpoint_path}")
+                from transformers import AutoModelForCausalLM, AutoTokenizer
+                
+                self._tokenizer = AutoTokenizer.from_pretrained(self.checkpoint_path)
+                self._model = AutoModelForCausalLM.from_pretrained(
+                    self.checkpoint_path,
+                    device_map="auto",
+                )
+                logger.info("GRPO-tuned model loaded successfully")
+            else:
+                # TODO: Initialize actual Gemma model when available
+                # from langchain_google_genai import ChatGoogleGenerativeAI
+                # self._model = ChatGoogleGenerativeAI(
+                #     model=self.settings.gemma_model_name,
+                #     google_api_key=self.settings.google_api_key,
+                #     temperature=self.settings.model_temperature,
+                # )
+                logger.info("Using default model (GRPO checkpoint not provided)")
+                
             logger.info("Reasoning trace generator initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize reasoning trace generator: {e}")
