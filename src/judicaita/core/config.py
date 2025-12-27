@@ -117,6 +117,24 @@ class Settings(BaseSettings):
     enable_compliance_audit: bool = Field(default=True, description="Enable compliance auditing")
     experimental_features: bool = Field(default=False, description="Enable experimental features")
 
+    # GRPO Training Configuration
+    grpo_checkpoint_path: str = Field(
+        default="", description="Path to GRPO-tuned checkpoint for reasoning"
+    )
+    grpo_base_model: str = Field(
+        default="google/gemma-2-2b-it", description="Base model for GRPO training"
+    )
+    grpo_learning_rate: float = Field(
+        default=1e-5, ge=1e-7, le=1e-3, description="GRPO training learning rate"
+    )
+    grpo_num_epochs: int = Field(
+        default=3, ge=1, le=20, description="Number of GRPO training epochs"
+    )
+    grpo_batch_size: int = Field(default=4, ge=1, le=32, description="GRPO training batch size")
+    grpo_use_lora: bool = Field(
+        default=True, description="Use LoRA for parameter-efficient GRPO training"
+    )
+
     from pydantic import model_validator
 
     @model_validator(mode="after")
