@@ -6,7 +6,7 @@
 
 **An Explainable Legal AI Assistant for Lawyers and Paralegals**
 
-Judicaita is an AI companion built with **Google Tunix** and **Gemma 3n** for the Kaggle hackathon. It generates explainable legal reasoning, stepwise traces, citation mapping, plain-English summaries, and compliance audit logs from case files, ensuring transparent and efficient legal workflows...fitting all this into a tiny form factor that can go anywhere!
+Judicaita is an AI companion built with **Google Tunix** and **Gemma3-1B-IT** for the Kaggle hackathon. It generates explainable legal reasoning, stepwise traces, citation mapping, plain-English summaries, and compliance audit logs from case files, ensuring transparent and efficient legal workflows...fitting all this into a tiny form factor that can go anywhere!
 
 ## 🌟 Features
 
