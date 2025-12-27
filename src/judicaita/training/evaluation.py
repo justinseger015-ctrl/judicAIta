@@ -143,9 +143,7 @@ class EvaluationHarness:
 
         return result
 
-    def _compute_sample_metrics(
-        self, prediction: str, reference: str
-    ) -> dict[str, Any]:
+    def _compute_sample_metrics(self, prediction: str, reference: str) -> dict[str, Any]:
         """Compute metrics for a single sample."""
         import re
 
@@ -168,9 +166,7 @@ class EvaluationHarness:
             "length": len(prediction.split()),
         }
 
-    def _compute_rouge(
-        self, predictions: list[str], references: list[str]
-    ) -> dict[str, float]:
+    def _compute_rouge(self, predictions: list[str], references: list[str]) -> dict[str, float]:
         """Compute ROUGE scores."""
         if self._rouge is not None:
             try:
@@ -196,7 +192,7 @@ class EvaluationHarness:
         rouge1_scores = []
         rouge2_scores = []
 
-        for pred, ref in zip(predictions, references):
+        for pred, ref in zip(predictions, references, strict=False):
             pred_tokens = pred.lower().split()
             ref_tokens = ref.lower().split()
 
@@ -210,8 +206,8 @@ class EvaluationHarness:
             rouge1_scores.append(rouge1)
 
             # ROUGE-2: bigram overlap
-            pred_bigrams = set(zip(pred_tokens[:-1], pred_tokens[1:]))
-            ref_bigrams = set(zip(ref_tokens[:-1], ref_tokens[1:]))
+            pred_bigrams = set(zip(pred_tokens[:-1], pred_tokens[1:], strict=False))
+            ref_bigrams = set(zip(ref_tokens[:-1], ref_tokens[1:], strict=False))
             if ref_bigrams:
                 rouge2 = len(pred_bigrams & ref_bigrams) / len(ref_bigrams)
             else:
@@ -242,13 +238,11 @@ class EvaluationHarness:
         # Fallback: simple BLEU approximation
         return self._compute_bleu_fallback(predictions, references)
 
-    def _compute_bleu_fallback(
-        self, predictions: list[str], references: list[str]
-    ) -> float:
+    def _compute_bleu_fallback(self, predictions: list[str], references: list[str]) -> float:
         """Fallback BLEU implementation."""
         scores = []
 
-        for pred, ref in zip(predictions, references):
+        for pred, ref in zip(predictions, references, strict=False):
             pred_tokens = pred.lower().split()
             ref_tokens = ref.lower().split()
 
@@ -260,8 +254,10 @@ class EvaluationHarness:
                 precision = 0.0
 
             # Length penalty
-            bp = 1.0 if len(pred_tokens) >= len(ref_tokens) else np.exp(
-                1 - len(ref_tokens) / max(len(pred_tokens), 1)
+            bp = (
+                1.0
+                if len(pred_tokens) >= len(ref_tokens)
+                else np.exp(1 - len(ref_tokens) / max(len(pred_tokens), 1))
             )
 
             scores.append(bp * precision)

@@ -92,9 +92,7 @@ class LegalBenchDataset:
                 # Note: Actual task filtering depends on LegalBench structure
                 # This is a placeholder that should be adapted to actual dataset schema
                 if isinstance(dataset, DatasetDict):
-                    task_samples = self._filter_task_samples(
-                        dataset, task.name, task.num_samples
-                    )
+                    task_samples = self._filter_task_samples(dataset, task.name, task.num_samples)
                     all_samples.extend(task_samples)
 
             # Create unified dataset
@@ -159,9 +157,7 @@ class PileOfLawDataset:
     # Relevant subsets from Pile-of-Law
     SUBSETS = ["courtlistener_opinions", "uscode", "contracts"]
 
-    def __init__(
-        self, subsets: list[str] | None = None, samples_per_subset: int = 5000
-    ) -> None:
+    def __init__(self, subsets: list[str] | None = None, samples_per_subset: int = 5000) -> None:
         """
         Initialize Pile-of-Law dataset loader.
 
@@ -235,9 +231,7 @@ class SyntheticCoTGenerator:
     for legal prompts from LegalBench.
     """
 
-    def __init__(
-        self, model_name: str = "google/gemma-2-27b-it", device: str = "cuda"
-    ) -> None:
+    def __init__(self, model_name: str = "google/gemma-2-27b-it", device: str = "cuda") -> None:
         """
         Initialize synthetic CoT generator.
 

@@ -18,10 +18,8 @@ from transformers import (
     AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizer,
-    TrainingArguments,
 )
 
-from judicaita.core.config import get_settings
 from judicaita.training.rewards import CompositeReward
 
 
@@ -274,10 +272,7 @@ class GRPOTrainer:
                     total_loss = 0.0
 
                 # Evaluation
-                if (
-                    self.eval_dataset is not None
-                    and global_step % self.config.eval_steps == 0
-                ):
+                if self.eval_dataset is not None and global_step % self.config.eval_steps == 0:
                     eval_metrics = self.evaluate()
                     logger.info(f"Evaluation metrics: {eval_metrics}")
                     self.model.train()
@@ -310,8 +305,6 @@ class GRPOTrainer:
         Returns:
             Tuple of (loss, metrics)
         """
-        batch_size = len(prompts)
-
         # Generate multiple rollouts per prompt
         all_responses = []
         all_log_probs = []
@@ -330,7 +323,9 @@ class GRPOTrainer:
 
         # Compute rewards for all rollouts
         rewards = []
-        for i, (prompt, rollout_responses) in enumerate(zip(prompts, all_responses)):
+        for i, (prompt, rollout_responses) in enumerate(
+            zip(prompts, all_responses, strict=False)
+        ):
             reference = references[i] if i < len(references) else ""
             rollout_rewards = []
 
@@ -372,9 +367,7 @@ class GRPOTrainer:
             Tuple of (generated_text, log_prob)
         """
         # Tokenize prompt
-        inputs = self.tokenizer(prompt, return_tensors="pt", padding=True).to(
-            self.config.device
-        )
+        inputs = self.tokenizer(prompt, return_tensors="pt", padding=True).to(self.config.device)
 
         # Generate with model
         with torch.no_grad():
@@ -427,9 +420,7 @@ class GRPOTrainer:
                 batch[key] = [ex[key] for ex in examples]
             return batch
 
-        return DataLoader(
-            dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn
-        )
+        return DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
 
     def evaluate(self) -> dict[str, float]:
         """

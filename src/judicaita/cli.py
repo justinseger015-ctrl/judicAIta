@@ -79,9 +79,7 @@ def analyze_query(
 @app.command()
 def audit_report(
     days: int = typer.Option(7, "--days", "-d", help="Number of days to include"),
-    output_file: Path | None = typer.Option(
-        None, "--output", "-o", help="Output file for report"
-    ),
+    output_file: Path | None = typer.Option(None, "--output", "-o", help="Output file for report"),
 ) -> None:
     """
     Generate compliance audit report.
@@ -180,15 +178,11 @@ def train_grpo(
     try:
         # Create training dataset
         console.print("Loading and preparing datasets...")
-        legalbench_data, pile_of_law_data = create_training_dataset(
-            generate_cot=generate_cot
-        )
+        legalbench_data, pile_of_law_data = create_training_dataset(generate_cot=generate_cot)
 
         # Limit samples if specified
         if max_samples is not None:
-            legalbench_data = legalbench_data.select(
-                range(min(max_samples, len(legalbench_data)))
-            )
+            legalbench_data = legalbench_data.select(range(min(max_samples, len(legalbench_data))))
 
         console.print(
             f"Loaded {len(legalbench_data)} LegalBench samples, "
@@ -220,15 +214,13 @@ def train_grpo(
 
     except Exception as e:
         console.print(f"[bold red]Training failed: {e}[/bold red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
 def evaluate_model(
     checkpoint_path: Path = typer.Argument(..., help="Path to model checkpoint"),
-    output_file: Path | None = typer.Option(
-        None, "--output", "-o", help="Output file for results"
-    ),
+    output_file: Path | None = typer.Option(None, "--output", "-o", help="Output file for results"),
     max_samples: int | None = typer.Option(
         None, "--max-samples", help="Maximum samples to evaluate"
     ),
@@ -253,12 +245,14 @@ def evaluate_model(
 
         # Split for evaluation (use last 20%)
         eval_size = int(0.2 * len(legalbench_data))
-        eval_dataset = legalbench_data.select(range(len(legalbench_data) - eval_size, len(legalbench_data)))
+        eval_dataset = legalbench_data.select(
+            range(len(legalbench_data) - eval_size, len(legalbench_data))
+        )
 
         console.print(f"Evaluating on {len(eval_dataset)} samples")
 
         # Run evaluation
-        results = evaluate_checkpoint(
+        evaluate_checkpoint(
             str(checkpoint_path),
             eval_dataset,
             max_samples=max_samples,
@@ -269,7 +263,7 @@ def evaluate_model(
 
     except Exception as e:
         console.print(f"[bold red]Evaluation failed: {e}[/bold red]")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 def main() -> None:

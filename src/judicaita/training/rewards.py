@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from typing import Any
 
 import torch
-from loguru import logger
 
 
 @dataclass
@@ -158,9 +157,7 @@ class OutcomeReward(BaseReward):
     def _extract_conclusion(self, response: str) -> str:
         """Extract conclusion from response."""
         # Look for conclusion section
-        match = re.search(
-            r"Conclusion:\s*(.+?)(?:\n\n|$)", response, re.IGNORECASE | re.DOTALL
-        )
+        match = re.search(r"Conclusion:\s*(.+?)(?:\n\n|$)", response, re.IGNORECASE | re.DOTALL)
 
         if match:
             return match.group(1).strip()
@@ -340,7 +337,7 @@ class CompositeReward(BaseReward):
 
         rewards = []
 
-        for prompt, response, reference in zip(prompts, responses, references):
+        for prompt, response, reference in zip(prompts, responses, references, strict=False):
             result = self.compute(prompt, response, reference)
             rewards.append(result.score)
 

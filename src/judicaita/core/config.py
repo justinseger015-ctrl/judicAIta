@@ -130,9 +130,7 @@ class Settings(BaseSettings):
     grpo_num_epochs: int = Field(
         default=3, ge=1, le=20, description="Number of GRPO training epochs"
     )
-    grpo_batch_size: int = Field(
-        default=4, ge=1, le=32, description="GRPO training batch size"
-    )
+    grpo_batch_size: int = Field(default=4, ge=1, le=32, description="GRPO training batch size")
     grpo_use_lora: bool = Field(
         default=True, description="Use LoRA for parameter-efficient GRPO training"
     )

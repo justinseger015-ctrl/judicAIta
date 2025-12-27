@@ -21,14 +21,14 @@ class ReasoningTraceGenerator:
 
     This class creates step-by-step reasoning traces that show how the AI
     arrives at its conclusions, making the decision-making process transparent.
-    
+
     Supports loading GRPO-tuned checkpoints for improved reasoning performance.
     """
 
     def __init__(self, checkpoint_path: str | None = None) -> None:
         """
         Initialize the reasoning trace generator.
-        
+
         Args:
             checkpoint_path: Optional path to GRPO-tuned checkpoint
         """
@@ -41,12 +41,12 @@ class ReasoningTraceGenerator:
         """Initialize the model and necessary resources."""
         try:
             logger.info("Initializing reasoning trace generator with Gemma 3n")
-            
+
             # Load GRPO-tuned checkpoint if provided
             if self.checkpoint_path:
                 logger.info(f"Loading GRPO-tuned checkpoint from {self.checkpoint_path}")
                 from transformers import AutoModelForCausalLM, AutoTokenizer
-                
+
                 self._tokenizer = AutoTokenizer.from_pretrained(self.checkpoint_path)
                 self._model = AutoModelForCausalLM.from_pretrained(
                     self.checkpoint_path,
@@ -62,11 +62,11 @@ class ReasoningTraceGenerator:
                 #     temperature=self.settings.model_temperature,
                 # )
                 logger.info("Using default model (GRPO checkpoint not provided)")
-                
+
             logger.info("Reasoning trace generator initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize reasoning trace generator: {e}")
-            raise ModelInferenceError(f"Model initialization failed: {e}")
+            raise ModelInferenceError(f"Model initialization failed: {e}") from e
 
     async def generate_trace(
         self,
@@ -138,7 +138,7 @@ class ReasoningTraceGenerator:
             raise ModelInferenceError(
                 f"Reasoning trace generation failed: {e}",
                 details={"query": query, "trace_id": trace_id},
-            )
+            ) from e
 
     async def _analyze_query(self, query: str, context: str) -> ReasoningStep:
         """Analyze the query and extract key legal issues."""
