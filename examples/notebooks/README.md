@@ -6,11 +6,11 @@ This directory contains example notebooks and scripts for training legal reasoni
 
 ### `train_tunix_reasoning.ipynb` - **NEW! Tunix/TPU Training** 🚀
 
-Complete Google Colab notebook for training Gemma 3 with GRPO on TPU using Google Tunix framework.
+Complete Google Colab notebook for training Gemma 2-2B-IT with GRPO on TPU using Google Tunix framework.
 
 **Features:**
 - TPU v2-8+ setup and initialization
-- Gemma 3-1B-IT model loading and fine-tuning
+- Gemma 2-2B-IT model loading and fine-tuning (upgradeable to Gemma 3)
 - XML-formatted reasoning (`<reasoning>`/`<answer>` tags)
 - Custom reward function (format + length + correctness)
 - LoRA parameter-efficient training
