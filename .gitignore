@@ -80,6 +80,14 @@ models/
 data/raw/
 data/processed/
 
+# Training artifacts (Tunix/TPU)
+checkpoints/
+final_checkpoint/
+kaggle_upload/
+gemma_model_cache/
+*.safetensors
+adapter_model/
+
 # Documentation builds
 docs/_build/
 site/

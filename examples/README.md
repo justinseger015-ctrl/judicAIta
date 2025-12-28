@@ -35,7 +35,20 @@ python examples/reasoning_trace_example.py
 
 ## Jupyter Notebooks
 
-Coming soon! We're working on interactive Jupyter notebooks that will include:
+The `notebooks/` directory contains interactive Jupyter notebooks:
+
+### `train_tunix_reasoning.ipynb` - Tunix/TPU Training (Kaggle Hackathon) 🚀
+
+Complete training notebook for Google Colab with TPU:
+- TPU v2-8+ environment setup
+- Gemma 3-1B-IT model fine-tuning with GRPO
+- XML-formatted reasoning traces
+- LoRA parameter-efficient training
+- Kaggle submission preparation
+
+**Open in Colab and set runtime to TPU to get started!**
+
+### Coming Soon
 
 - **Getting Started**: Introduction to Judicaita
 - **Document Processing**: Deep dive into document handling

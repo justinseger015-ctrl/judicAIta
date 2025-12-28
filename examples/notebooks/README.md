@@ -2,6 +2,33 @@
 
 This directory contains example notebooks and scripts for training legal reasoning models using GRPO (Group Relative Policy Optimization).
 
+## Available Notebooks
+
+### `train_tunix_reasoning.ipynb` - **NEW! Tunix/TPU Training** 🚀
+
+Complete Google Colab notebook for training Gemma 3 with GRPO on TPU using Google Tunix framework.
+
+**Features:**
+- TPU v2-8+ setup and initialization
+- Gemma 3-1B-IT model loading and fine-tuning
+- XML-formatted reasoning (`<reasoning>`/`<answer>` tags)
+- Custom reward function (format + length + correctness)
+- LoRA parameter-efficient training
+- Kaggle submission package export
+
+**Requirements:**
+- Google Colab with TPU runtime
+- Hugging Face account (for model access)
+- Kaggle account (for submission)
+
+**Usage:**
+1. Open in Google Colab
+2. Set runtime to TPU (Runtime → Change runtime type → TPU)
+3. Run cells sequentially
+4. Follow inline instructions for authentication
+
+**Note:** This uses JAX/Flax/Tunix stack (different from PyTorch main codebase).
+
 ## Quick Start
 
 ### Training a Model
@@ -73,7 +100,8 @@ judicaita evaluate-model ./checkpoints/grpo/final --max-samples 100
 
 ## Notebooks
 
-- `grpo_training_demo.ipynb` - Complete training demonstration
+- **`train_tunix_reasoning.ipynb`** - Tunix/TPU training with XML-formatted reasoning (Kaggle hackathon)
+- `grpo_training_demo.ipynb` - Complete training demonstration (PyTorch)
 - `evaluation_demo.ipynb` - Model evaluation examples
 - `inference_demo.ipynb` - Inference with trained models
 
