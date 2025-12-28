@@ -169,11 +169,40 @@ Judicaita uses environment variables for configuration. Key settings:
 
 See `.env.example` for all configuration options.
 
+## 🔧 Training & Fine-tuning
+
+### Tunix/TPU Training (Kaggle Hackathon)
+
+For training Gemma models with GRPO on Google Cloud TPU using the Tunix framework:
+
+**Notebook:** [`examples/notebooks/train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb)
+
+This specialized training approach uses:
+- **Framework:** JAX/Flax with Google Tunix (different from main PyTorch codebase)
+- **Hardware:** TPU v2-8+ on Google Colab
+- **Model:** Gemma 3-1B-IT with LoRA adapters
+- **Format:** XML-tagged reasoning (`<reasoning>`/`<answer>`)
+- **Method:** GRPO (Group Relative Policy Optimization)
+
+**Prerequisites:**
+- Google Colab account with TPU access
+- Hugging Face account for model downloads
+- Kaggle account for submissions
+
+**Quick Start:**
+1. Open [`train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb) in Colab
+2. Set runtime to TPU (Runtime → Change runtime type → TPU)
+3. Follow notebook instructions step-by-step
+
+See [examples/notebooks/README.md](examples/notebooks/README.md) for more training options including PyTorch-based GRPO training.
+
 ## 📚 Documentation
 
 - [Architecture Overview](docs/architecture/overview.md)
 - [API Reference](docs/api/reference.md)
 - [User Guide](docs/guides/user-guide.md)
+- [GRPO Training Guide](docs/GRPO_TRAINING.md)
+- [Tunix/TPU Training Notebook](examples/notebooks/train_tunix_reasoning.ipynb)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Development Setup](docs/guides/development.md)
 
