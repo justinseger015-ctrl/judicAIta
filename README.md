@@ -180,7 +180,7 @@ For training Gemma models with GRPO on Google Cloud TPU using the Tunix framewor
 This specialized training approach uses:
 - **Framework:** JAX/Flax with Google Tunix (different from main PyTorch codebase)
 - **Hardware:** TPU v2-8+ on Google Colab
-- **Model:** Gemma 2-2B-IT with LoRA adapters (upgradeable to Gemma 3 when available)
+- **Model:** Gemma 3-1B-IT with LoRA adapters
 - **Format:** XML-tagged reasoning (`<reasoning>`/`<answer>`)
 - **Method:** GRPO (Group Relative Policy Optimization)
 
