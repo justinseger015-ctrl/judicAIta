@@ -172,6 +172,29 @@ Judicaita uses environment variables for configuration. Key settings:
 
 See `.env.example` for all configuration options.
 
+## ⚠️ Important Setup Notes
+
+### TPU Training Dependencies (Critical)
+
+> **🔴 ATTENTION KAGGLE HACKATHON PARTICIPANTS:** The training notebook was updated in **December 2025** to fix critical dependency issues. If you encounter `ModuleNotFoundError: No module named 'tunix'`, ensure you're using the latest notebook version.
+
+| Package | Required Version | Notes |
+|---------|------------------|-------|
+| `google-tunix` | `>=0.1.0,<=0.1.5` | ⚠️ **NOT** 0.5.0+ (does not exist on PyPI) |
+| `jax[tpu]` | TPU-compatible | Use official libtpu releases, **NOT** `jax==0.4.35` |
+| `flax` | `0.10.2` | Compatible with JAX TPU builds |
+
+**Common Pitfalls:**
+- ❌ `pip install google-tunix>=0.5.0` → Package doesn't exist, causes `ModuleNotFoundError`
+- ❌ `pip install jax==0.4.35 jaxlib==0.4.35` → Incompatible with Colab TPU runtime
+- ✅ Use: `pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html`
+
+**Expected Warnings (Harmless):**
+- `jax_cuda12_plugin` warnings are **normal** on Colab TPU and can be safely ignored
+- These appear because Colab has GPU packages pre-installed alongside TPU runtime
+
+For complete version compatibility details, see the [Version Compatibility Summary](examples/notebooks/train_tunix_reasoning.ipynb) in the training notebook.
+
 ## 🔧 Training & Fine-tuning
 
 ### Tunix/TPU Training (Kaggle Hackathon)
@@ -180,12 +203,26 @@ For training Gemma models with GRPO on Google Cloud TPU using the Tunix framewor
 
 **Notebook:** [`examples/notebooks/train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb)
 
+> 📢 **Updated December 2025:** This notebook was recently updated to fix critical dependency installation errors. See [PR #13](https://github.com/clduab11/judicAIta/pull/13) for details.
+
 This specialized training approach uses:
 - **Framework:** JAX/Flax with Google Tunix (different from main PyTorch codebase)
 - **Hardware:** TPU v2-8+ on Google Colab
 - **Model:** Gemma 3-1B-IT with LoRA adapters
 - **Format:** XML-tagged reasoning (`<reasoning>`/`<answer>`)
 - **Method:** GRPO (Group Relative Policy Optimization)
+
+**Dependency Requirements:**
+```bash
+# ✅ Correct installation (from notebook Step 1)
+!pip install -q "google-tunix[tpu]>=0.1.0,<=0.1.5"
+!pip install -q "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
+!pip install -q flax==0.10.2
+
+# ❌ Do NOT use these (outdated/incorrect)
+# !pip install "google-tunix>=0.5.0"  # Version doesn't exist!
+# !pip install jax==0.4.35 jaxlib==0.4.35  # Incompatible with Colab TPU
+```
 
 **Prerequisites:**
 - Google Colab account with TPU access
@@ -195,7 +232,16 @@ This specialized training approach uses:
 **Quick Start:**
 1. Open [`train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb) in Colab
 2. Set runtime to TPU (Runtime → Change runtime type → TPU)
-3. Follow notebook instructions step-by-step
+3. Run Step 1 (dependencies) - expect `jax_cuda12_plugin` warnings (harmless)
+4. **Restart runtime** when prompted
+5. Continue with Step 2 onwards
+
+**Quick Troubleshooting:**
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `ModuleNotFoundError: No module named 'tunix'` | Wrong Tunix version | Use `>=0.1.0,<=0.1.5` |
+| JAX TPU initialization fails | Wrong JAX version | Use `jax[tpu]` with libtpu releases |
+| `jax_cuda12_plugin` warnings | Normal for Colab | Ignore - harmless for TPU |
 
 See [examples/notebooks/README.md](examples/notebooks/README.md) for more training options including PyTorch-based GRPO training.
 
@@ -208,6 +254,35 @@ See [examples/notebooks/README.md](examples/notebooks/README.md) for more traini
 - [Tunix/TPU Training Notebook](examples/notebooks/train_tunix_reasoning.ipynb)
 - [Contributing Guide](CONTRIBUTING.md)
 - [Development Setup](docs/guides/development.md)
+
+## 🐛 Known Issues & Troubleshooting
+
+### TPU Training Notebook Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `ModuleNotFoundError: No module named 'tunix'` | Incorrect Tunix version | Install `google-tunix[tpu]>=0.1.0,<=0.1.5` (max is 0.1.5, **NOT** 0.5.0) |
+| JAX TPU initialization fails | Incompatible JAX version | Use `pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html` |
+| `RuntimeError: TPU not found` | Wrong Colab runtime | Set runtime to TPU: Runtime → Change runtime type → TPU |
+| Imports fail after install | Runtime not restarted | Restart runtime after Step 1, then continue from Step 2 |
+
+### Expected Warnings (Safe to Ignore)
+
+- **`jax_cuda12_plugin` warnings**: Normal on Google Colab TPU runtime. These appear because Colab has GPU packages pre-installed. They do not affect TPU training.
+
+### Version Constraints
+
+**Google Tunix:**
+- Maximum available version: **0.1.5** (as of December 2025)
+- Do NOT use `>=0.5.0` - this version does not exist on PyPI
+- Optimized for Kaggle's Google Tunix hackathon requirements
+
+**JAX for TPU:**
+- Use `jax[tpu]` with official libtpu releases
+- JAX 0.4+ requires TPU VMs (not available on Colab)
+- Colab TPU runtime requires TPU-specific builds
+
+For comprehensive troubleshooting, see the **Troubleshooting Guide** section in [`train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb).
 
 ## 🧪 Testing
 
@@ -245,8 +320,9 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 🙏 Acknowledgments
 
-- Built with [Google Tunix](https://tunix.google.com) and [Gemma 3n](https://ai.google.dev/gemma)
-- Developed for the Kaggle Hackathon
+- Built with [Google Tunix](https://tunix.google.com) (0.1.x series) and [Gemma 3n](https://ai.google.dev/gemma)
+- Optimized for the **Kaggle Google Tunix Hackathon** requirements
+- TPU training tested on Google Colab TPU runtime (note: JAX 0.4+ requires TPU VMs not available on Colab)
 - Inspired by the legal tech community's commitment to access to justice
 
 ## 📞 Contact & Support
