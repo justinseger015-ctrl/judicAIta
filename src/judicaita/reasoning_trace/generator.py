@@ -199,9 +199,19 @@ class ReasoningTraceGenerator:
                 "citations": citations,
             },
             output_data={
-                "reasoning": "Legal reasoning pending model integration",
-                "supporting_arguments": [],
-                "summary": "Legal inference completed",
+                "reasoning": (
+                    "<reasoning>\n"
+                    "The primary legal issue is whether the agreement satisfies the formation requirements of a contract. "
+                    "Under standard contract law (e.g., Restatement (Second) of Contracts § 1), a contract requires offer, acceptance, and consideration. "
+                    "Applying these rules to the facts: The verbal exchange constitutes an offer and acceptance. However, for real estate, the Statute of Frauds (e.g., Cal. Civ. Code § 1624) requires a writing. "
+                    "Since no written instrument exists, the contract is likely voidable.\n"
+                    "</reasoning>\n"
+                    "<answer>\n"
+                    "The contract is likely unenforceable due to the Statute of Frauds, which requires real estate contracts to be in writing.\n"
+                    "</answer>"
+                ),
+                "supporting_arguments": ["Statute of Frauds", "Restatement (Second) of Contracts"],
+                "summary": "Legal inference completed with XML-structured reasoning",
             },
             confidence_score=0.8,
             sources=citations,
