@@ -193,6 +193,16 @@ See `.env.example` for all configuration options.
 - `jax_cuda12_plugin` warnings are **normal** on Colab TPU and can be safely ignored
 - These appear because Colab has GPU packages pre-installed alongside TPU runtime
 
+**Phase 1 Validation:**
+Before proceeding with training, complete the **Phase 1: Colab TPU Smoke Test** validation cells in the notebook to verify:
+- ✅ Package versions (google-tunix, jax, flax)
+- ✅ TPU device detection (8 cores expected for TPU v2-8)
+- ✅ Import verification (Tunix, JAX, Flax)
+- ✅ HBM memory visibility
+- ✅ LoRA adapter configuration
+
+See [Phase 1 Validation Guide](examples/notebooks/README.md#-phase-1-colab-tpu-smoke-test--dependency-validation) for detailed instructions.
+
 For complete version compatibility details, see the [Version Compatibility Summary](examples/notebooks/train_tunix_reasoning.ipynb) in the training notebook.
 
 ### 📋 Phase 1: TPU Smoke Test (Recommended)
@@ -216,7 +226,9 @@ For training Gemma models with GRPO on Google Cloud TPU using the Tunix framewor
 
 **Notebook:** [`examples/notebooks/train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb)
 
-> 📢 **Updated December 2025:** This notebook was recently updated to fix critical dependency installation errors. See [PR #13](https://github.com/clduab11/judicAIta/pull/13) for details.
+> 📢 **Updated December 2025:** This notebook now includes **Phase 1 validation cells** for environment setup verification. See [Phase 1 Guide](examples/notebooks/README.md) for complete smoke test instructions.
+> 
+> Previous update fixed critical dependency installation errors. See [PR #13](https://github.com/clduab11/judicAIta/pull/13) for details.
 
 This specialized training approach uses:
 - **Framework:** JAX/Flax with Google Tunix (different from main PyTorch codebase)
