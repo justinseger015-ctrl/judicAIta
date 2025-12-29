@@ -2,7 +2,6 @@
 Tests for reward functions.
 """
 
-import pytest
 
 from judicaita.training.rewards import (
     CompositeReward,

@@ -369,8 +369,14 @@ class ValidationChecker:
         if ready_for_phase_3:
             logger.info("✅ All Phase 2 validation checks passed!")
         else:
-            failed = [c.name for c in [completion, reward_components, memory_stable,
-                                       time_feasible, gradients_stable] if not c.passed]
+            all_checks = [
+                completion,
+                reward_components,
+                memory_stable,
+                time_feasible,
+                gradients_stable,
+            ]
+            failed = [check.name for check in all_checks if not check.passed]
             logger.warning(f"⚠️ Phase 2 validation failed: {', '.join(failed)}")
 
         return report

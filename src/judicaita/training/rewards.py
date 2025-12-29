@@ -265,6 +265,9 @@ class CitationAccuracyReward(BaseReward):
         r"\d+\s+L\.\s*Ed\.\s*\d*d?\s+\d+",  # Lawyers' Edition
     ]
 
+    # Pre-compiled patterns at class level for performance
+    _COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in CITATION_PATTERNS]
+
     def __init__(
         self,
         min_citations: int = 1,
@@ -282,13 +285,12 @@ class CitationAccuracyReward(BaseReward):
         self.min_citations = min_citations
         self.bonus_per_citation = bonus_per_citation
         self.max_bonus = max_bonus
-        self._compiled_patterns = [re.compile(p, re.IGNORECASE) for p in self.CITATION_PATTERNS]
 
     def compute(self, prompt: str, response: str, reference: str = "") -> RewardResult:
         """Compute citation accuracy reward based on legal citations present."""
         citations_found = []
 
-        for pattern in self._compiled_patterns:
+        for pattern in self._COMPILED_PATTERNS:
             matches = pattern.findall(response)
             citations_found.extend(matches)
 

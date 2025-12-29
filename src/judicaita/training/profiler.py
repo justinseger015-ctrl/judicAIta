@@ -5,6 +5,7 @@ This module provides GPU memory tracking and profiling utilities
 for monitoring training resource usage and ensuring stability.
 """
 
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -92,11 +93,7 @@ class MemoryProfiler:
             }
 
         try:
-            device_idx = (
-                torch.cuda.current_device()
-                if self.device == "cuda"
-                else int(self.device.split(":")[-1]) if ":" in self.device else 0
-            )
+            device_idx = self._parse_device_index()
 
             allocated_bytes = torch.cuda.memory_allocated(device_idx)
             reserved_bytes = torch.cuda.memory_reserved(device_idx)
@@ -116,6 +113,24 @@ class MemoryProfiler:
                 "max_allocated_gb": 0.0,
                 "available": False,
             }
+
+    def _parse_device_index(self) -> int:
+        """
+        Parse the CUDA device index from the device string.
+
+        Returns:
+            Integer device index (0 if unable to parse)
+        """
+        if self.device == "cuda":
+            return torch.cuda.current_device()
+
+        if ":" in self.device:
+            try:
+                return int(self.device.split(":")[-1])
+            except ValueError:
+                return 0
+
+        return 0
 
     def log_memory_usage(self, step: int) -> MemorySnapshot:
         """
@@ -178,12 +193,17 @@ class MemoryProfiler:
         Returns:
             Dictionary with memory statistics and analysis
         """
+        # Use math.isinf for robust infinity checking
+        min_alloc = (
+            0.0
+            if math.isinf(self.stats.min_allocated_gb)
+            else round(self.stats.min_allocated_gb, 2)
+        )
+
         return {
             "peak_allocated_gb": round(self.stats.peak_allocated_gb, 2),
             "avg_allocated_gb": round(self.stats.avg_allocated_gb, 2),
-            "min_allocated_gb": round(self.stats.min_allocated_gb, 2)
-            if self.stats.min_allocated_gb != float("inf")
-            else 0.0,
+            "min_allocated_gb": min_alloc,
             "threshold_gb": self.threshold_gb,
             "within_threshold": self.stats.peak_allocated_gb <= self.threshold_gb,
             "num_snapshots": len(self.stats.snapshots),

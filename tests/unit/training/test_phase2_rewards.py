@@ -2,7 +2,6 @@
 Tests for new Phase 2 reward components.
 """
 
-import pytest
 
 from judicaita.training.rewards import (
     CitationAccuracyReward,
@@ -71,9 +70,11 @@ class TestClarityReward:
             max_sentence_length=50,
         )
 
-        response = """The court found the defendant liable. 
-        This decision was based on clear evidence. 
-        The ruling affects similar future cases."""
+        response = (
+            "The court found the defendant liable. "
+            "This decision was based on clear evidence. "
+            "The ruling affects similar future cases."
+        )
 
         result = reward.compute("test prompt", response, "")
 
@@ -85,13 +86,13 @@ class TestClarityReward:
         """Test clarity reward with overly complex sentences."""
         reward = ClarityReward(max_sentence_length=20)
 
-        # Very long sentence
+        # Very long sentence that exceeds max_sentence_length
         response = (
-            "The defendant's motion for summary judgment was denied by the court "
-            "after considering the extensive evidence presented by the plaintiff "
-            "which included numerous documents and witness testimonies that "
-            "clearly demonstrated the defendant's liability in this matter "
-            "as established by the applicable legal standards and precedents."
+            "The defendant's motion for summary judgment was denied by the "
+            "court after considering the extensive evidence presented by the plaintiff "
+            "which included numerous documents and witness testimonies that clearly "
+            "demonstrated the defendant's liability in this matter as established by "
+            "the applicable legal standards and precedents."
         )
 
         result = reward.compute("test prompt", response, "")

@@ -14,7 +14,6 @@ from judicaita.training.profiler import (
 from judicaita.training.validation import (
     ValidationChecker,
     ValidationReport,
-    ValidationResult,
 )
 
 
