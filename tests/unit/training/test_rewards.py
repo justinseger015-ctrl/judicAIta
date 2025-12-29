@@ -85,7 +85,7 @@ class TestVerbosityReward:
 
     def test_verbosity_reward_optimal_length(self) -> None:
         """Test verbosity reward with optimal length."""
-        reward = VerbosityReward(target_length=10, tolerance=0.5)
+        reward = VerbosityReward(target_length=10, tolerance=0.5, min_length=5)
 
         response = "This is exactly ten words in total for testing purposes here"
 
