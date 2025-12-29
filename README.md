@@ -205,6 +205,19 @@ See [Phase 1 Validation Guide](examples/notebooks/README.md#-phase-1-colab-tpu-s
 
 For complete version compatibility details, see the [Version Compatibility Summary](examples/notebooks/train_tunix_reasoning.ipynb) in the training notebook.
 
+### 📋 Phase 1: TPU Smoke Test (Recommended)
+
+Before running full training, validate your Colab TPU environment using the **Phase 1 validation cells** in the notebook:
+
+1. **Run Phase 1 validation cells** after Step 1 installation
+2. **Verify all checks pass:**
+   - ✅ 8 TPU cores detected
+   - ✅ Tunix/Flax/JAX imports successful
+   - ✅ LoRA adapter modules accessible
+3. **Proceed to Phase 2** training only after validation passes
+
+See [Phase 1 Validation Guide](examples/notebooks/README.md#-phase-1-tpu-smoke-test--validation) for detailed checklist and troubleshooting.
+
 ## 🔧 Training & Fine-tuning
 
 ### Tunix/TPU Training (Kaggle Hackathon)
@@ -246,7 +259,8 @@ This specialized training approach uses:
 2. Set runtime to TPU (Runtime → Change runtime type → TPU)
 3. Run Step 1 (dependencies) - expect `jax_cuda12_plugin` warnings (harmless)
 4. **Restart runtime** when prompted
-5. Continue with Step 2 onwards
+5. **Run Phase 1 validation cells** to verify TPU and imports
+6. Continue with training steps after validation passes
 
 **Quick Troubleshooting:**
 | Error | Cause | Solution |

@@ -55,6 +55,47 @@ Complete Google Colab notebook for training Gemma 3-1B-IT with GRPO on TPU using
 **Troubleshooting:**
 See inline troubleshooting reference in the notebook for common issues.
 
+## 📋 Phase 1: TPU Smoke Test & Validation
+
+Before running full training, the notebook includes a **Phase 1 validation flow** to verify environment setup:
+
+### Validation Checklist
+
+| Step | Cell | What it Validates |
+|------|------|-------------------|
+| 1 | Install Dependencies | Package installation completes |
+| 2 | Package Versions | Tunix 0.1.x, JAX TPU, Flax 0.10.2 |
+| 3 | Runtime Restart | Fresh Python interpreter |
+| 4 | TPU Detection | 8 TPU cores visible |
+| 5 | Import Verification | JAX, Tunix, Flax imports |
+| 6 | HBM Check | Memory visibility (optional) |
+| 7 | LoRA Test | Adapter modules accessible |
+| 8 | Validation Summary | All checks passed |
+
+### Phase 1 Success Criteria
+
+- ✅ All 8 TPU cores detected
+- ✅ Tunix/Flax/JAX imports successful
+- ✅ HBM memory stats visible (optional)
+- ✅ LoRA adapter modules accessible
+
+**→ Phase 2 training can proceed when all critical checks pass**
+
+### Common Issues & Solutions
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `ModuleNotFoundError: No module named 'tunix'` | Wrong Tunix version | Use `>=0.1.0,<=0.1.5` |
+| JAX TPU initialization fails | Wrong JAX version | Use `jax[tpu]` with libtpu releases |
+| `RuntimeError: TPU not found` | Wrong Colab runtime | Set runtime to TPU |
+| Imports fail after install | Runtime not restarted | Restart runtime after Step 1 |
+| `jax_cuda12_plugin` warnings | Normal for Colab | Ignore - harmless for TPU |
+
+### Related PRs
+
+- **[PR #13](https://github.com/clduab11/judicAIta/pull/13)** - Fixed `ModuleNotFoundError` dependency version constraints
+- **[PR #7](https://github.com/clduab11/judicAIta/issues/7)** - ground_truth metadata bug (blocks Phase 2)
+
 ## Quick Start
 
 ### Training a Model
