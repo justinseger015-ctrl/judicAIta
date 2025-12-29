@@ -9,6 +9,7 @@ This directory contains example notebooks and scripts for training legal reasoni
 Complete Google Colab notebook for training Gemma 3-1B-IT with GRPO on TPU using Google Tunix framework.
 
 **Features:**
+- **Phase 1 Validation**: Comprehensive smoke test for TPU setup and dependencies
 - TPU v2-8+ setup and initialization
 - Gemma 3-1B-IT model loading and fine-tuning
 - XML-formatted reasoning (`<reasoning>`/`<answer>` tags)
@@ -22,12 +23,37 @@ Complete Google Colab notebook for training Gemma 3-1B-IT with GRPO on TPU using
 - Kaggle account (for submission)
 
 **Usage:**
+
+#### Phase 1: Environment Validation (Required First)
 1. Open in Google Colab
 2. Set runtime to TPU (Runtime → Change runtime type → TPU)
-3. Run cells sequentially
-4. Follow inline instructions for authentication
+3. Run **Step 1** (dependency installation)
+4. Run validation cell to verify package versions
+5. **Restart runtime** (critical!)
+6. Run **Step 2** (TPU initialization)
+7. Run all Phase 1 validation cells (imports, HBM, LoRA, summary)
+8. Verify "🎉 ALL CHECKS PASSED" message before proceeding
 
-**Note:** This uses JAX/Flax/Tunix stack (different from PyTorch main codebase).
+#### Phase 2: Training Execution
+9. Complete Steps 3-5 (model download, dataset preparation)
+10. Execute GRPO training
+11. Export LoRA adapters for submission
+
+**Validation Criteria:**
+- ✅ 8 TPU cores detected (or 4 for TPU v2-4)
+- ✅ JAX version: 0.8.x (TPU-compatible)
+- ✅ Tunix imported successfully
+- ✅ Flax version: 0.12.x or 0.10.2
+- ✅ HBM memory stats visible (after model load)
+- ✅ LoRA adapter configuration validated
+
+**⚠️ Important Notes:**
+- `jax_cuda12_plugin` warnings are **normal and harmless** on Colab TPU
+- Phase 2 blocked by [PR #7](https://github.com/clduab11/judicAIta/pull/7) - `ground_truth` metadata bug
+- Uses JAX/Flax/Tunix stack (different from PyTorch main codebase)
+
+**Troubleshooting:**
+See inline troubleshooting reference in the notebook for common issues.
 
 ## Quick Start
 
