@@ -8,6 +8,9 @@
 
 Judicaita is an AI companion built with **Google Tunix** and **Gemma3-1B-IT** for the Kaggle hackathon. It generates explainable legal reasoning, stepwise traces, citation mapping, plain-English summaries, and compliance audit logs from case files, ensuring transparent and efficient legal workflows...fitting all this into a tiny form factor that can go anywhere!
 
+<img width="2560" height="1440" alt="VeniceAI_sNE72d5_@2x" src="https://github.com/user-attachments/assets/0eab368e-69b0-4b35-8715-7252a04d2301" />
+
+
 ## 🌟 Features
 
 ### Core Capabilities
