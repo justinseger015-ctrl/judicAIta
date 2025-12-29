@@ -5,6 +5,7 @@ This module implements the GRPO training algorithm adapted for legal reasoning
 with support for LoRA/PEFT for parameter-efficient training.
 """
 
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -20,7 +21,13 @@ from transformers import (
     PreTrainedTokenizer,
 )
 
+from judicaita.training.profiler import (
+    GradientMonitor,
+    MemoryProfiler,
+    TrainingTimeEstimator,
+)
 from judicaita.training.rewards import CompositeReward
+from judicaita.training.validation import ValidationChecker, ValidationReport
 
 
 @dataclass
@@ -82,6 +89,13 @@ class TrainingConfig:
     model_revision: str | None = None  # Specific commit hash or "main" for base model
     checkpoint_revision: str | None = None  # Specific commit hash for checkpoints
 
+    # Phase 2: Validation mode settings
+    max_steps: int | None = None  # Maximum training steps (None for full training)
+    validation_mode: bool = False  # Enable validation mode with reduced settings
+    memory_log_steps: int = 10  # Steps between memory profiling logs
+    memory_threshold_gb: float = 12.0  # Memory threshold for validation warnings
+    time_limit_hours: float = 8.5  # Maximum allowed training time (Kaggle limit)
+
 
 class GRPOTrainer:
     """
@@ -116,6 +130,23 @@ class GRPOTrainer:
         self.tokenizer: PreTrainedTokenizer | None = None
         self.optimizer: torch.optim.Optimizer | None = None
         self.lr_scheduler: Any | None = None
+
+        # Phase 2: Profiling and monitoring components
+        self.memory_profiler = MemoryProfiler(
+            threshold_gb=config.memory_threshold_gb,
+            log_interval=config.memory_log_steps,
+            device=config.device,
+        )
+        self.gradient_monitor = GradientMonitor(log_interval=config.logging_steps)
+        self.time_estimator = TrainingTimeEstimator(time_limit_hours=config.time_limit_hours)
+        self.validation_checker = ValidationChecker(
+            target_steps=config.max_steps or 50,
+            memory_threshold_gb=config.memory_threshold_gb,
+            time_limit_hours=config.time_limit_hours,
+        )
+
+        # Track last reward details for validation
+        self._last_reward_details: dict[str, Any] | None = None
 
         # Set random seed
         torch.manual_seed(self.config.seed)
@@ -209,95 +240,208 @@ class GRPOTrainer:
 
     def train(self) -> dict[str, Any]:
         """
-        Run GRPO training loop.
+        Run GRPO training loop with memory profiling and time estimation.
 
         Returns:
-            Training metrics and statistics
+            Training metrics and statistics, including validation report if in validation mode
         """
         if self.model is None or self.tokenizer is None:
             raise RuntimeError("Trainer not initialized. Call initialize() first.")
 
+        # Calculate total steps for time estimation
+        steps_per_epoch = (
+            len(self.train_dataset)
+            // self.config.batch_size
+            // self.config.gradient_accumulation_steps
+        )
+        total_training_steps = steps_per_epoch * self.config.num_epochs
+
+        # Apply max_steps limit if specified
+        effective_max_steps = self.config.max_steps or total_training_steps
+
         logger.info("Starting GRPO training...")
         logger.info(f"Training for {self.config.num_epochs} epochs")
         logger.info(f"Training dataset size: {len(self.train_dataset)}")
+        if self.config.max_steps:
+            logger.info(f"Max steps limit: {self.config.max_steps}")
+        if self.config.validation_mode:
+            logger.info("🔬 Validation mode enabled - running with profiling")
 
         self.model.train()
 
         global_step = 0
         total_loss = 0.0
-        training_metrics = {"losses": [], "rewards": [], "advantages": []}
+        training_metrics: dict[str, Any] = {
+            "losses": [],
+            "rewards": [],
+            "advantages": [],
+            "memory_usage": [],
+            "gradient_norms": [],
+        }
+        training_error: str | None = None
+        training_start_time = time.time()
 
-        for epoch in range(self.config.num_epochs):
-            logger.info(f"Epoch {epoch + 1}/{self.config.num_epochs}")
+        try:
+            for epoch in range(self.config.num_epochs):
+                logger.info(f"Epoch {epoch + 1}/{self.config.num_epochs}")
 
-            epoch_loss = 0.0
-            num_batches = 0
+                epoch_loss = 0.0
+                num_batches = 0
 
-            # Create dataloader
-            dataloader = self._create_dataloader(self.train_dataset, self.config.batch_size)
+                # Create dataloader
+                dataloader = self._create_dataloader(self.train_dataset, self.config.batch_size)
 
-            for batch_idx, batch in enumerate(dataloader):
-                # Generate rollouts for each prompt
-                prompts = batch["prompt"]
-                references = batch.get("response", [""] * len(prompts))
+                for batch_idx, batch in enumerate(dataloader):
+                    # Check max_steps limit
+                    if global_step >= effective_max_steps:
+                        logger.info(f"Reached max_steps limit ({effective_max_steps}), stopping training")
+                        break
 
-                # Perform GRPO update
-                loss, metrics = self._grpo_step(prompts, references)
+                    # Start step timing
+                    self.time_estimator.start_step()
 
-                # Backward pass with gradient accumulation
-                loss = loss / self.config.gradient_accumulation_steps
-                loss.backward()
+                    # Generate rollouts for each prompt
+                    prompts = batch["prompt"]
+                    references = batch.get("response", [""] * len(prompts))
 
-                if (batch_idx + 1) % self.config.gradient_accumulation_steps == 0:
-                    # Gradient clipping
-                    torch.nn.utils.clip_grad_norm_(
-                        self.model.parameters(), self.config.max_grad_norm
-                    )
+                    # Perform GRPO update
+                    loss, metrics = self._grpo_step(prompts, references)
 
-                    # Optimizer step
-                    self.optimizer.step()
-                    if self.lr_scheduler is not None:
-                        self.lr_scheduler.step()
+                    # Store last reward details for validation
+                    if "reward_details" in metrics:
+                        self._last_reward_details = metrics["reward_details"]
 
-                    self.optimizer.zero_grad()
-                    global_step += 1
+                    # Backward pass with gradient accumulation
+                    loss = loss / self.config.gradient_accumulation_steps
+                    loss.backward()
 
-                # Track metrics
-                epoch_loss += loss.item()
-                total_loss += loss.item()
-                num_batches += 1
+                    if (batch_idx + 1) % self.config.gradient_accumulation_steps == 0:
+                        # Check gradient stability before clipping
+                        grad_norm, is_stable = self.gradient_monitor.check_gradients(
+                            self.model, global_step
+                        )
+                        training_metrics["gradient_norms"].append(grad_norm)
 
-                # Logging
-                if global_step % self.config.logging_steps == 0:
-                    avg_loss = total_loss / self.config.logging_steps
-                    logger.info(
-                        f"Step {global_step}, Loss: {avg_loss:.4f}, "
-                        f"Avg Reward: {metrics.get('avg_reward', 0.0):.4f}"
-                    )
-                    training_metrics["losses"].append(avg_loss)
-                    training_metrics["rewards"].append(metrics.get("avg_reward", 0.0))
-                    total_loss = 0.0
+                        if not is_stable:
+                            logger.error(f"NaN/Inf gradient at step {global_step}")
+                            self.save_checkpoint(f"emergency-step-{global_step}")
+                            raise RuntimeError(
+                                f"Training unstable: NaN/Inf gradients detected at step {global_step}"
+                            )
 
-                # Evaluation
-                if self.eval_dataset is not None and global_step % self.config.eval_steps == 0:
-                    eval_metrics = self.evaluate()
-                    logger.info(f"Evaluation metrics: {eval_metrics}")
-                    self.model.train()
+                        # Gradient clipping
+                        torch.nn.utils.clip_grad_norm_(
+                            self.model.parameters(), self.config.max_grad_norm
+                        )
 
-                # Checkpointing
-                if global_step % self.config.save_steps == 0:
-                    self.save_checkpoint(global_step)
+                        # Optimizer step
+                        self.optimizer.step()
+                        if self.lr_scheduler is not None:
+                            self.lr_scheduler.step()
 
-            # End of epoch logging
-            avg_epoch_loss = epoch_loss / num_batches if num_batches > 0 else 0.0
-            logger.info(f"Epoch {epoch + 1} completed, Average Loss: {avg_epoch_loss:.4f}")
+                        self.optimizer.zero_grad()
+                        global_step += 1
 
-        logger.info("Training completed!")
+                        # End step timing
+                        self.time_estimator.end_step()
 
-        # Save final checkpoint
-        self.save_checkpoint("final")
+                        # Memory profiling
+                        if global_step % self.config.memory_log_steps == 0:
+                            snapshot = self.memory_profiler.log_memory_usage(global_step)
+                            training_metrics["memory_usage"].append({
+                                "step": global_step,
+                                "allocated_gb": snapshot.allocated_gb,
+                            })
+
+                            # Check memory threshold
+                            self.memory_profiler.check_memory_threshold(global_step)
+
+                        # Time estimation logging
+                        self.time_estimator.log_progress(
+                            global_step, effective_max_steps, self.config.logging_steps
+                        )
+
+                    # Track metrics
+                    epoch_loss += loss.item()
+                    total_loss += loss.item()
+                    num_batches += 1
+
+                    # Logging
+                    if global_step % self.config.logging_steps == 0:
+                        avg_loss = total_loss / self.config.logging_steps
+                        logger.info(
+                            f"Step {global_step}, Loss: {avg_loss:.4f}, "
+                            f"Avg Reward: {metrics.get('avg_reward', 0.0):.4f}"
+                        )
+                        training_metrics["losses"].append(avg_loss)
+                        training_metrics["rewards"].append(metrics.get("avg_reward", 0.0))
+                        total_loss = 0.0
+
+                    # Evaluation
+                    if self.eval_dataset is not None and global_step % self.config.eval_steps == 0:
+                        eval_metrics = self.evaluate()
+                        logger.info(f"Evaluation metrics: {eval_metrics}")
+                        self.model.train()
+
+                    # Checkpointing
+                    if global_step % self.config.save_steps == 0:
+                        self.save_checkpoint(global_step)
+
+                # Check if we hit max_steps limit during epoch
+                if global_step >= effective_max_steps:
+                    break
+
+                # End of epoch logging
+                avg_epoch_loss = epoch_loss / num_batches if num_batches > 0 else 0.0
+                logger.info(f"Epoch {epoch + 1} completed, Average Loss: {avg_epoch_loss:.4f}")
+
+        except Exception as e:
+            training_error = str(e)
+            logger.error(f"Training failed: {training_error}")
+
+        # Calculate elapsed time
+        elapsed_time = time.time() - training_start_time
+        logger.info(f"Training completed in {elapsed_time:.1f}s ({global_step} steps)")
+
+        # Save final checkpoint (if not already saved and no error)
+        if training_error is None:
+            self.save_checkpoint("final")
+
+        # Generate validation report if in validation mode
+        if self.config.validation_mode or self.config.max_steps:
+            validation_report = self._generate_validation_report(
+                completed_steps=global_step,
+                had_error=training_error is not None,
+                error_message=training_error,
+                total_training_steps=total_training_steps,
+            )
+            training_metrics["validation_report"] = validation_report.to_dict()
+            validation_report.print_report()
 
         return training_metrics
+
+    def _generate_validation_report(
+        self,
+        completed_steps: int,
+        had_error: bool,
+        error_message: str | None,
+        total_training_steps: int,
+    ) -> ValidationReport:
+        """Generate Phase 2 validation report."""
+        # Get profiling reports
+        memory_report = self.memory_profiler.get_memory_report()
+        gradient_report = self.gradient_monitor.get_stability_report()
+        time_estimate = self.time_estimator.estimate_total_time(total_training_steps)
+
+        return self.validation_checker.generate_report(
+            completed_steps=completed_steps,
+            had_error=had_error,
+            error_message=error_message,
+            reward_details=self._last_reward_details,
+            memory_report=memory_report,
+            time_estimate=time_estimate,
+            gradient_report=gradient_report,
+        )
 
     def _grpo_step(
         self, prompts: list[str], references: list[str]
@@ -330,6 +474,7 @@ class GRPOTrainer:
 
         # Compute rewards for all rollouts
         rewards = []
+        last_reward_details = None
         for i, (prompt, rollout_responses) in enumerate(zip(prompts, all_responses, strict=False)):
             reference = references[i] if i < len(references) else ""
             rollout_rewards = []
@@ -337,6 +482,8 @@ class GRPOTrainer:
             for response in rollout_responses:
                 reward_result = self.reward_fn.compute(prompt, response, reference)
                 rollout_rewards.append(reward_result.score)
+                # Keep last reward details for validation
+                last_reward_details = reward_result.details
 
             rewards.append(rollout_rewards)
 
@@ -357,6 +504,7 @@ class GRPOTrainer:
             "avg_reward": rewards_tensor.mean().item(),
             "avg_advantage": advantages.mean().item(),
             "loss": loss.item(),
+            "reward_details": last_reward_details,  # Include for validation
         }
 
         return loss, metrics

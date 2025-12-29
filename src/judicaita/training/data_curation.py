@@ -5,6 +5,7 @@ This module handles loading and preprocessing datasets from LegalBench and Pile-
 along with synthetic Chain-of-Thought (CoT) generation for reasoning traces.
 """
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -13,6 +14,12 @@ import pandas as pd
 from datasets import Dataset, DatasetDict, load_dataset
 from loguru import logger
 from transformers import AutoModelForCausalLM, AutoTokenizer
+
+
+class GroundTruthValidationError(Exception):
+    """Raised when ground_truth field validation fails (PR #7 blocker)."""
+
+    pass
 
 
 @dataclass
@@ -144,6 +151,90 @@ class LegalBenchDataset:
             logger.warning(f"Could not filter samples for task {task_name}: {e}")
 
         return samples
+
+    def validate_ground_truth_presence(self, require_xml_tags: bool = True) -> bool:
+        """
+        Validate that all samples contain the ground_truth field required for reward calculation.
+
+        This validation is required before GRPO training can proceed.
+        If ground_truth is missing, PR #7 has not been merged.
+
+        Args:
+            require_xml_tags: Whether to verify XML-tagged format in responses
+
+        Returns:
+            True if validation passes
+
+        Raises:
+            GroundTruthValidationError: If ground_truth field is missing or validation fails
+        """
+        if self.dataset is None:
+            raise GroundTruthValidationError(
+                "Dataset not loaded. Call load() before validation."
+            )
+
+        if len(self.dataset) == 0:
+            logger.warning("Dataset is empty, skipping ground_truth validation")
+            return True
+
+        missing_count = 0
+        empty_count = 0
+
+        for i, sample in enumerate(self.dataset):
+            # Check for ground_truth field
+            if "ground_truth" not in sample:
+                missing_count += 1
+                if missing_count == 1:  # Log first occurrence
+                    logger.error(
+                        f"PR #7 NOT MERGED: ground_truth metadata missing in sample {i}. "
+                        "Training will fail silently with incorrect reward signals."
+                    )
+
+            elif not sample.get("ground_truth"):
+                empty_count += 1
+                if empty_count <= 3:  # Log first few occurrences
+                    logger.warning(f"Empty ground_truth in sample {i}")
+
+        if missing_count > 0:
+            raise GroundTruthValidationError(
+                f"PR #7 NOT MERGED: ground_truth metadata missing in {missing_count} samples. "
+                f"Training will fail silently with incorrect reward signals. "
+                f"Please merge PR clduab11/judicAIta#7 before proceeding."
+            )
+
+        # Verify XML-tagged format if required
+        if require_xml_tags:
+            xml_valid_count = 0
+            for sample in self.dataset:
+                response = sample.get("response", "") or sample.get("ground_truth", "")
+                if self._has_xml_tags(response):
+                    xml_valid_count += 1
+
+            # Log XML tag statistics (not a blocker, just informational)
+            xml_percentage = (xml_valid_count / len(self.dataset)) * 100
+            logger.info(
+                f"XML tag validation: {xml_valid_count}/{len(self.dataset)} samples "
+                f"({xml_percentage:.1f}%) have valid XML structure"
+            )
+
+        logger.info(
+            f"✅ Ground truth validation passed: {len(self.dataset)} samples checked"
+        )
+        if empty_count > 0:
+            logger.warning(f"⚠️ {empty_count} samples have empty ground_truth values")
+
+        return True
+
+    def _has_xml_tags(self, text: str) -> bool:
+        """Check if text contains expected XML-tagged format."""
+        if not text:
+            return False
+
+        # Check for <reasoning>...</reasoning> and <answer>...</answer> tags
+        has_reasoning = bool(re.search(r"<reasoning>.*</reasoning>", text, re.DOTALL))
+        has_answer = bool(re.search(r"<answer>.*</answer>", text, re.DOTALL))
+
+        return has_reasoning or has_answer
 
 
 class PileOfLawDataset:
