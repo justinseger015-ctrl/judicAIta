@@ -180,7 +180,7 @@ See `.env.example` for all configuration options.
 
 | Package | Required Version | Notes |
 |---------|------------------|-------|
-| `google-tunix` | `0.1.0 - 0.1.6` | Max version: 0.1.6 (Dec 2025), **NOT** 0.5.0+ |
+| `google-tunix` | `0.1.0 - 0.1.6` | Max version: 0.1.5 (Dec 2025), **NOT** 0.5.0+ |
 | `jax` | TPU-compatible (0.8.x) | Use `jax[tpu]` with libtpu releases |
 | `flax` | `0.10.2` or `0.12.x` | Compatible with JAX TPU builds |
 | `transformers` | `>=4.40.0,<=4.57.1` | For Gemma model support |
