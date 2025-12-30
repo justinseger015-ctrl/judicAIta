@@ -2,9 +2,7 @@
 Tests for training configuration.
 """
 
-from pathlib import Path
 
-import pytest
 
 from judicaita.training.grpo_trainer import TrainingConfig
 

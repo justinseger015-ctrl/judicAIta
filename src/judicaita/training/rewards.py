@@ -245,18 +245,194 @@ class VerbosityReward(BaseReward):
         return RewardResult(score=score, details=details)
 
 
-class CompositeReward(BaseReward):
+class CitationAccuracyReward(BaseReward):
     """
-    Composite reward function that combines multiple reward signals.
+    Reward function for evaluating citation accuracy in legal responses.
 
-    Aggregates format, outcome, and verbosity rewards with configurable weights.
+    Checks for presence and proper formatting of legal citations
+    (U.S.C., case names, section symbols, etc.).
+    """
+
+    # Common legal citation patterns
+    CITATION_PATTERNS = [
+        r"\d+\s+U\.S\.C\.\s+§?\s*\d+",  # Federal code: 42 U.S.C. § 1983
+        r"\d+\s+U\.S\.\s+\d+",  # Supreme Court: 347 U.S. 483
+        r"\d+\s+F\.\d+d\s+\d+",  # Federal Reporter (F.2d, F.3d): 123 F.2d 456
+        r"\d+\s+F\.\s+\d+",  # Original Federal Reporter: 123 F. 456
+        r"\d+\s+F\.\s*Supp\.\s*\d*d?\s+\d+",  # F. Supp. citations
+        r"[A-Z][A-Za-z'\-\s]+\s+v\.\s+[A-Z][A-Za-z'\-\s]+",  # Case names: Brown v. Board of Education, SEC v. Goldman
+        r"§\s*\d+[\.\d]*",  # Section symbols: § 1234
+        r"\d+\s+S\.\s*Ct\.\s+\d+",  # Supreme Court Reporter
+        r"\d+\s+L\.\s*Ed\.\s*\d*d?\s+\d+",  # Lawyers' Edition
+    ]
+
+    # Pre-compiled patterns at class level for performance
+    _COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in CITATION_PATTERNS]
+
+    def __init__(
+        self,
+        min_citations: int = 1,
+        bonus_per_citation: float = 0.1,
+        max_bonus: float = 0.3,
+    ) -> None:
+        """
+        Initialize citation accuracy reward.
+
+        Args:
+            min_citations: Minimum citations for full base score
+            bonus_per_citation: Bonus score per additional citation
+            max_bonus: Maximum bonus for multiple citations
+        """
+        self.min_citations = min_citations
+        self.bonus_per_citation = bonus_per_citation
+        self.max_bonus = max_bonus
+
+    def compute(self, prompt: str, response: str, reference: str = "") -> RewardResult:
+        """Compute citation accuracy reward based on legal citations present."""
+        citations_found = []
+
+        for pattern in self._COMPILED_PATTERNS:
+            matches = pattern.findall(response)
+            citations_found.extend(matches)
+
+        num_citations = len(citations_found)
+
+        # Base score: 0.7 if minimum citations present, scaled otherwise
+        if num_citations >= self.min_citations:
+            base_score = 0.7
+        else:
+            base_score = 0.7 * (num_citations / self.min_citations) if self.min_citations > 0 else 0.0
+
+        # Bonus for additional citations
+        extra_citations = max(0, num_citations - self.min_citations)
+        bonus = min(extra_citations * self.bonus_per_citation, self.max_bonus)
+
+        score = min(1.0, base_score + bonus)
+
+        details = {
+            "num_citations": num_citations,
+            "citations_found": citations_found[:5],  # First 5 for debugging
+            "meets_minimum": num_citations >= self.min_citations,
+            "base_score": base_score,
+            "bonus": bonus,
+        }
+
+        return RewardResult(score=score, details=details)
+
+
+class ClarityReward(BaseReward):
+    """
+    Reward function for evaluating clarity of legal responses.
+
+    Uses readability metrics and sentence structure analysis to
+    evaluate plain-English quality.
     """
 
     def __init__(
         self,
-        format_weight: float = 0.3,
-        outcome_weight: float = 0.5,
-        verbosity_weight: float = 0.2,
+        target_avg_sentence_length: int = 20,
+        max_sentence_length: int = 50,
+        target_avg_word_length: float = 5.0,
+    ) -> None:
+        """
+        Initialize clarity reward.
+
+        Args:
+            target_avg_sentence_length: Target average sentence length in words
+            max_sentence_length: Maximum acceptable sentence length
+            target_avg_word_length: Target average word length in characters
+        """
+        self.target_avg_sentence_length = target_avg_sentence_length
+        self.max_sentence_length = max_sentence_length
+        self.target_avg_word_length = target_avg_word_length
+
+    def compute(self, prompt: str, response: str, reference: str = "") -> RewardResult:
+        """Compute clarity reward based on readability metrics."""
+        if not response.strip():
+            return RewardResult(score=0.0, details={"reason": "empty_response"})
+
+        # Split into sentences using a more robust approach that handles abbreviations
+        # by requiring whitespace after sentence-ending punctuation
+        sentences = re.split(r"(?<=[.!?])\s+", response)
+        sentences = [s.strip() for s in sentences if s.strip()]
+
+        if not sentences:
+            return RewardResult(score=0.0, details={"reason": "no_sentences"})
+
+        # Calculate metrics
+        sentence_lengths = [len(s.split()) for s in sentences]
+        avg_sentence_length = sum(sentence_lengths) / len(sentence_lengths)
+
+        # Count long sentences
+        long_sentences = sum(1 for length in sentence_lengths if length > self.max_sentence_length)
+        long_sentence_ratio = long_sentences / len(sentences)
+
+        # Calculate average word length (exclude punctuation from word length)
+        words = re.findall(r"\b\w+\b", response)
+        if words:
+            avg_word_length = sum(len(w) for w in words) / len(words)
+        else:
+            avg_word_length = 0.0
+
+        # Compute component scores using exponential decay for smoother penalty
+        # Sentence length score (prefer target, use exponential decay for gradual penalty)
+        sentence_length_deviation = abs(avg_sentence_length - self.target_avg_sentence_length)
+        # Exponential decay: score = exp(-k * deviation/target), where k controls decay rate
+        import math
+        sentence_length_score = math.exp(-0.5 * sentence_length_deviation / self.target_avg_sentence_length)
+
+        # Penalize long sentences
+        long_sentence_penalty = 1.0 - (long_sentence_ratio * 0.5)
+
+        # Word complexity score (prefer moderate word length) with exponential decay
+        word_length_deviation = abs(avg_word_length - self.target_avg_word_length)
+        word_length_score = math.exp(-0.5 * word_length_deviation / self.target_avg_word_length)
+
+        # Combine scores (weights: sentence length 40%, long sentence penalty 30%, word length 30%)
+        score = (
+            0.4 * sentence_length_score
+            + 0.3 * long_sentence_penalty
+            + 0.3 * word_length_score
+        )
+
+        details = {
+            "avg_sentence_length": round(avg_sentence_length, 1),
+            "num_sentences": len(sentences),
+            "long_sentences": long_sentences,
+            "avg_word_length": round(avg_word_length, 1),
+            "sentence_length_score": round(sentence_length_score, 2),
+            "word_length_score": round(word_length_score, 2),
+        }
+
+        return RewardResult(score=score, details=details)
+
+
+class CompositeReward(BaseReward):
+    """
+    Composite reward function that combines multiple reward signals.
+
+    Aggregates correctness, reasoning quality, citation accuracy, and clarity rewards
+    with configurable weights. Default weights align with the Phase 2 specification:
+    - Correctness: 40%
+    - Reasoning Quality: 30%
+    - Citation Accuracy: 20%
+    - Clarity: 10%
+    """
+
+    def __init__(
+        self,
+        correctness_weight: float = 0.4,
+        reasoning_quality_weight: float = 0.3,
+        citation_accuracy_weight: float = 0.2,
+        clarity_weight: float = 0.1,
+        correctness_reward: OutcomeReward | None = None,
+        reasoning_quality_reward: FormatReward | None = None,
+        citation_accuracy_reward: CitationAccuracyReward | None = None,
+        clarity_reward: ClarityReward | None = None,
+        # Legacy support for old 3-component interface
+        format_weight: float | None = None,
+        outcome_weight: float | None = None,
+        verbosity_weight: float | None = None,
         format_reward: FormatReward | None = None,
         outcome_reward: OutcomeReward | None = None,
         verbosity_reward: VerbosityReward | None = None,
@@ -265,58 +441,168 @@ class CompositeReward(BaseReward):
         Initialize composite reward.
 
         Args:
-            format_weight: Weight for format reward
-            outcome_weight: Weight for outcome reward
-            verbosity_weight: Weight for verbosity reward
-            format_reward: Format reward instance (creates default if None)
-            outcome_reward: Outcome reward instance (creates default if None)
-            verbosity_reward: Verbosity reward instance (creates default if None)
+            correctness_weight: Weight for correctness reward (40% default)
+            reasoning_quality_weight: Weight for reasoning quality reward (30% default)
+            citation_accuracy_weight: Weight for citation accuracy reward (20% default)
+            clarity_weight: Weight for clarity reward (10% default)
+            correctness_reward: Correctness reward instance (creates default if None)
+            reasoning_quality_reward: Reasoning quality reward instance (creates default if None)
+            citation_accuracy_reward: Citation accuracy reward instance (creates default if None)
+            clarity_reward: Clarity reward instance (creates default if None)
+
+        Legacy Args (for backward compatibility):
+            format_weight: Maps to reasoning_quality_weight
+            outcome_weight: Maps to correctness_weight
+            verbosity_weight: Ignored in 4-component mode
+            format_reward: Maps to reasoning_quality_reward
+            outcome_reward: Maps to correctness_reward
+            verbosity_reward: Ignored in 4-component mode
         """
+        # Handle legacy 3-component interface for backward compatibility
+        if format_weight is not None or outcome_weight is not None or verbosity_weight is not None:
+            # Legacy mode: use old 3-component weights but map to new 4-component structure
+            # Redistribute legacy 3-component weights to 4-component structure proportionally.
+            # - Outcome weight maps to correctness_weight.
+            # - Format weight maps to reasoning_quality_weight.
+            # - Verbosity weight is split between citation_accuracy and clarity (2:1 ratio).
+            fw = format_weight if format_weight is not None else 0.3
+            ow = outcome_weight if outcome_weight is not None else 0.5
+            vw = verbosity_weight if verbosity_weight is not None else 0.2
+
+            total_legacy = fw + ow + vw
+            if total_legacy > 0:
+                fw_norm = fw / total_legacy
+                ow_norm = ow / total_legacy
+                vw_norm = vw / total_legacy
+
+                correctness_weight = ow_norm
+                reasoning_quality_weight = fw_norm
+                citation_accuracy_weight = vw_norm * (2.0 / 3.0)
+                clarity_weight = vw_norm * (1.0 / 3.0)
+
+            # Map legacy reward instances
+            if outcome_reward is not None:
+                correctness_reward = outcome_reward
+            if format_reward is not None:
+                reasoning_quality_reward = format_reward
+
         # Normalize weights
-        total_weight = format_weight + outcome_weight + verbosity_weight
-        self.format_weight = format_weight / total_weight
-        self.outcome_weight = outcome_weight / total_weight
-        self.verbosity_weight = verbosity_weight / total_weight
+        total_weight = (
+            correctness_weight
+            + reasoning_quality_weight
+            + citation_accuracy_weight
+            + clarity_weight
+        )
+        self.correctness_weight = correctness_weight / total_weight
+        self.reasoning_quality_weight = reasoning_quality_weight / total_weight
+        self.citation_accuracy_weight = citation_accuracy_weight / total_weight
+        self.clarity_weight = clarity_weight / total_weight
 
         # Initialize individual reward functions
-        self.format_reward = format_reward or FormatReward()
-        self.outcome_reward = outcome_reward or OutcomeReward()
-        self.verbosity_reward = verbosity_reward or VerbosityReward()
+        self.correctness_reward = correctness_reward or OutcomeReward()
+        self.reasoning_quality_reward = reasoning_quality_reward or FormatReward()
+        self.citation_accuracy_reward = citation_accuracy_reward or CitationAccuracyReward()
+        self.clarity_reward = clarity_reward or ClarityReward()
+
+        # Legacy attribute aliases for backward compatibility
+        self.format_weight = self.reasoning_quality_weight
+        self.outcome_weight = self.correctness_weight
+        self.verbosity_weight = self.clarity_weight
+        self.format_reward = self.reasoning_quality_reward
+        self.outcome_reward = self.correctness_reward
+        self.verbosity_reward = VerbosityReward()  # Keep for legacy tests
 
     def compute(self, prompt: str, response: str, reference: str = "") -> RewardResult:
-        """Compute composite reward by combining individual rewards."""
+        """Compute composite reward by combining all 4 component rewards."""
         # Compute individual rewards
-        format_result = self.format_reward.compute(prompt, response, reference)
-        outcome_result = self.outcome_reward.compute(prompt, response, reference)
-        verbosity_result = self.verbosity_reward.compute(prompt, response, reference)
+        correctness_result = self.correctness_reward.compute(prompt, response, reference)
+        reasoning_quality_result = self.reasoning_quality_reward.compute(prompt, response, reference)
+        citation_accuracy_result = self.citation_accuracy_reward.compute(prompt, response, reference)
+        clarity_result = self.clarity_reward.compute(prompt, response, reference)
 
         # Compute weighted sum
         composite_score = (
-            self.format_weight * format_result.score
-            + self.outcome_weight * outcome_result.score
-            + self.verbosity_weight * verbosity_result.score
+            self.correctness_weight * correctness_result.score
+            + self.reasoning_quality_weight * reasoning_quality_result.score
+            + self.citation_accuracy_weight * citation_accuracy_result.score
+            + self.clarity_weight * clarity_result.score
         )
 
         details = {
+            "correctness": {
+                "score": correctness_result.score,
+                "weight": self.correctness_weight,
+                "details": correctness_result.details,
+            },
+            "reasoning_quality": {
+                "score": reasoning_quality_result.score,
+                "weight": self.reasoning_quality_weight,
+                "details": reasoning_quality_result.details,
+            },
+            "citation_accuracy": {
+                "score": citation_accuracy_result.score,
+                "weight": self.citation_accuracy_weight,
+                "details": citation_accuracy_result.details,
+            },
+            "clarity": {
+                "score": clarity_result.score,
+                "weight": self.clarity_weight,
+                "details": clarity_result.details,
+            },
+            # Legacy keys for backward compatibility
             "format": {
-                "score": format_result.score,
-                "weight": self.format_weight,
-                "details": format_result.details,
+                "score": reasoning_quality_result.score,
+                "weight": self.reasoning_quality_weight,
+                "details": reasoning_quality_result.details,
             },
             "outcome": {
-                "score": outcome_result.score,
-                "weight": self.outcome_weight,
-                "details": outcome_result.details,
+                "score": correctness_result.score,
+                "weight": self.correctness_weight,
+                "details": correctness_result.details,
             },
             "verbosity": {
-                "score": verbosity_result.score,
-                "weight": self.verbosity_weight,
-                "details": verbosity_result.details,
+                "score": clarity_result.score,
+                "weight": self.clarity_weight,
+                "details": clarity_result.details,
             },
             "composite_score": composite_score,
         }
 
         return RewardResult(score=composite_score, details=details)
+
+    def validate_reward_output(self, reward_result: RewardResult) -> bool:
+        """
+        Verify reward function returns expected 4-component structure.
+
+        Args:
+            reward_result: The result to validate
+
+        Returns:
+            True if validation passes
+
+        Raises:
+            ValueError: If validation fails
+        """
+        required_components = ["correctness", "reasoning_quality", "citation_accuracy", "clarity"]
+
+        for component in required_components:
+            if component not in reward_result.details:
+                raise ValueError(f"Missing reward component: {component}")
+            if "score" not in reward_result.details[component]:
+                raise ValueError(f"Missing score for component: {component}")
+
+        # Verify total weight sums to ~1.0
+        total_weight = sum(
+            reward_result.details[c]["weight"] for c in required_components
+        )
+        if abs(total_weight - 1.0) > 0.01:
+            raise ValueError(f"Component weights do not sum to 1.0: {total_weight}")
+
+        # Verify composite score is normalized
+        if reward_result.score < 0.0 or reward_result.score > 1.0:
+            raise ValueError(f"Composite score out of range [0, 1]: {reward_result.score}")
+
+        return True
 
     def compute_batch(
         self, prompts: list[str], responses: list[str], references: list[str] | None = None

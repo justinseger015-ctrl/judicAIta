@@ -157,9 +157,27 @@ def train_grpo(
     max_samples: int | None = typer.Option(
         None, "--max-samples", help="Maximum training samples (for testing)"
     ),
+    # Phase 2: Validation mode options
+    max_steps: int | None = typer.Option(
+        None, "--max-steps", help="Maximum training steps (for validation runs, e.g., 50)"
+    ),
+    validation_mode: bool = typer.Option(
+        False,
+        "--validation-mode/--no-validation-mode",
+        help="Enable validation mode with profiling (sets max_steps=50, num_rollouts=2)",
+    ),
+    memory_threshold: float = typer.Option(
+        12.0, "--memory-threshold", help="Memory threshold in GB for validation warnings"
+    ),
+    time_limit: float = typer.Option(
+        8.5, "--time-limit", help="Maximum allowed training time in hours (Kaggle limit)"
+    ),
 ) -> None:
     """
     Train a model using GRPO on legal reasoning tasks.
+
+    Use --validation-mode for Phase 2 validation runs with memory profiling
+    and time estimation. This automatically sets max_steps=50 and num_rollouts=2.
 
     Args:
         output_dir: Output directory for checkpoints
@@ -170,10 +188,25 @@ def train_grpo(
         use_lora: Use LoRA for parameter-efficient training
         generate_cot: Generate synthetic CoT traces
         max_samples: Maximum training samples
+        max_steps: Maximum training steps for validation
+        validation_mode: Enable validation mode with profiling
+        memory_threshold: Memory threshold in GB
+        time_limit: Maximum training time in hours
     """
     from judicaita.training import GRPOTrainer, TrainingConfig, create_training_dataset
 
     console.print("[bold]Starting GRPO training pipeline...[/bold]")
+
+    # Apply validation mode defaults
+    if validation_mode:
+        console.print("[yellow]🔬 Validation mode enabled[/yellow]")
+        if max_steps is None:
+            max_steps = 50
+            console.print(f"   Setting max_steps={max_steps}")
+        num_rollouts = 2
+        console.print(f"   Setting num_rollouts={num_rollouts}")
+    else:
+        num_rollouts = 4
 
     try:
         # Create training dataset
@@ -197,6 +230,11 @@ def train_grpo(
             learning_rate=learning_rate,
             use_lora=use_lora,
             checkpoint_dir=output_dir,
+            num_rollouts=num_rollouts,
+            max_steps=max_steps,
+            validation_mode=validation_mode,
+            memory_threshold_gb=memory_threshold,
+            time_limit_hours=time_limit,
         )
 
         # Initialize trainer
@@ -208,8 +246,21 @@ def train_grpo(
         console.print("[bold green]Starting training...[/bold green]")
         metrics = trainer.train()
 
-        console.print("[bold green]Training completed successfully![/bold green]")
+        # Check validation results
+        if validation_mode or max_steps:
+            validation_report = metrics.get("validation_report", {})
+            if validation_report.get("ready_for_phase_3"):
+                console.print(
+                    "[bold green]✅ Phase 2 validation passed - Ready for Phase 3![/bold green]"
+                )
+            else:
+                console.print(
+                    "[bold yellow]⚠️ Phase 2 validation failed - Review report above[/bold yellow]"
+                )
+
+        # Always show a final metrics summary for all runs
         console.print(f"Final metrics: {metrics}")
+        console.print("[bold green]Training completed successfully![/bold green]")
         console.print(f"Checkpoints saved to: {output_dir}")
 
     except Exception as e:
