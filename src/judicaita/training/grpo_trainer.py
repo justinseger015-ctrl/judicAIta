@@ -132,18 +132,27 @@ class GRPOTrainer:
         self.lr_scheduler: Any | None = None
 
         # Phase 2: Profiling and monitoring components
-        self.memory_profiler = MemoryProfiler(
-            threshold_gb=config.memory_threshold_gb,
-            log_interval=config.memory_log_steps,
-            device=config.device,
-        )
-        self.gradient_monitor = GradientMonitor(log_interval=config.logging_steps)
-        self.time_estimator = TrainingTimeEstimator(time_limit_hours=config.time_limit_hours)
-        self.validation_checker = ValidationChecker(
-            target_steps=config.max_steps or 50,
-            memory_threshold_gb=config.memory_threshold_gb,
-            time_limit_hours=config.time_limit_hours,
-        )
+        # Only initialize profiling infrastructure when validation_mode is enabled
+        # to minimize overhead in production training runs
+        self._profiling_enabled = config.validation_mode or config.max_steps is not None
+        if self._profiling_enabled:
+            self.memory_profiler = MemoryProfiler(
+                threshold_gb=config.memory_threshold_gb,
+                log_interval=config.memory_log_steps,
+                device=config.device,
+            )
+            self.gradient_monitor = GradientMonitor(log_interval=config.logging_steps)
+            self.time_estimator = TrainingTimeEstimator(time_limit_hours=config.time_limit_hours)
+            self.validation_checker = ValidationChecker(
+                target_steps=config.max_steps or 50,
+                memory_threshold_gb=config.memory_threshold_gb,
+                time_limit_hours=config.time_limit_hours,
+            )
+        else:
+            self.memory_profiler = None
+            self.gradient_monitor = None
+            self.time_estimator = None
+            self.validation_checker = None
 
         # Track last reward details for validation
         self._last_reward_details: dict[str, Any] | None = None
@@ -297,8 +306,9 @@ class GRPOTrainer:
                         logger.info(f"Reached max_steps limit ({effective_max_steps}), stopping training")
                         break
 
-                    # Start step timing
-                    self.time_estimator.start_step()
+                    # Start step timing (only when profiling enabled)
+                    if self._profiling_enabled and self.time_estimator is not None:
+                        self.time_estimator.start_step()
 
                     # Generate rollouts for each prompt
                     prompts = batch["prompt"]
@@ -316,18 +326,23 @@ class GRPOTrainer:
                     loss.backward()
 
                     if (batch_idx + 1) % self.config.gradient_accumulation_steps == 0:
-                        # Check gradient stability before clipping
-                        grad_norm, is_stable = self.gradient_monitor.check_gradients(
-                            self.model, global_step
-                        )
-                        training_metrics["gradient_norms"].append(grad_norm)
-
-                        if not is_stable:
-                            logger.error(f"NaN/Inf gradient at step {global_step}")
-                            self.save_checkpoint(f"emergency-step-{global_step}")
-                            raise RuntimeError(
-                                f"Training unstable: NaN/Inf gradients detected at step {global_step}"
+                        # Check gradient stability before clipping (only when profiling enabled)
+                        if self._profiling_enabled and self.gradient_monitor is not None:
+                            grad_norm, is_stable = self.gradient_monitor.check_gradients(
+                                self.model, global_step
                             )
+                            training_metrics["gradient_norms"].append(grad_norm)
+
+                            if not is_stable:
+                                checkpoint_name = f"emergency-step-{global_step}"
+                                self.save_checkpoint(checkpoint_name)
+                                logger.critical(
+                                    f"Gradient instability detected at step {global_step}. "
+                                    f"Training will terminate early. Emergency checkpoint saved as '{checkpoint_name}'."
+                                )
+                                raise RuntimeError(
+                                    f"Training unstable: NaN/Inf gradients detected at step {global_step}"
+                                )
 
                         # Gradient clipping
                         torch.nn.utils.clip_grad_norm_(
@@ -342,24 +357,27 @@ class GRPOTrainer:
                         self.optimizer.zero_grad()
                         global_step += 1
 
-                        # End step timing
-                        self.time_estimator.end_step()
+                        # End step timing (only when profiling enabled)
+                        if self._profiling_enabled and self.time_estimator is not None:
+                            self.time_estimator.end_step()
 
-                        # Memory profiling
-                        if global_step % self.config.memory_log_steps == 0:
-                            snapshot = self.memory_profiler.log_memory_usage(global_step)
-                            training_metrics["memory_usage"].append({
-                                "step": global_step,
-                                "allocated_gb": snapshot.allocated_gb,
-                            })
+                        # Memory profiling (only when profiling enabled)
+                        if self._profiling_enabled and self.memory_profiler is not None:
+                            if global_step % self.config.memory_log_steps == 0:
+                                snapshot = self.memory_profiler.log_memory_usage(global_step)
+                                training_metrics["memory_usage"].append({
+                                    "step": global_step,
+                                    "allocated_gb": snapshot.allocated_gb,
+                                })
 
-                            # Check memory threshold
-                            self.memory_profiler.check_memory_threshold(global_step)
+                                # Check memory threshold
+                                self.memory_profiler.check_memory_threshold(global_step)
 
-                        # Time estimation logging
-                        self.time_estimator.log_progress(
-                            global_step, effective_max_steps, self.config.logging_steps
-                        )
+                        # Time estimation logging (only when profiling enabled)
+                        if self._profiling_enabled and self.time_estimator is not None:
+                            self.time_estimator.log_progress(
+                                global_step, effective_max_steps, self.config.logging_steps
+                            )
 
                     # Track metrics
                     epoch_loss += loss.item()
@@ -397,7 +415,7 @@ class GRPOTrainer:
 
         except Exception as e:
             training_error = str(e)
-            logger.error(f"Training failed: {training_error}")
+            logger.exception(f"Training failed: {training_error}")
 
         # Calculate elapsed time
         elapsed_time = time.time() - training_start_time
@@ -413,7 +431,7 @@ class GRPOTrainer:
                 completed_steps=global_step,
                 had_error=training_error is not None,
                 error_message=training_error,
-                total_training_steps=total_training_steps,
+                effective_max_steps=effective_max_steps,
             )
             training_metrics["validation_report"] = validation_report.to_dict()
             validation_report.print_report()
@@ -425,13 +443,23 @@ class GRPOTrainer:
         completed_steps: int,
         had_error: bool,
         error_message: str | None,
-        total_training_steps: int,
+        effective_max_steps: int,
     ) -> ValidationReport:
         """Generate Phase 2 validation report."""
-        # Get profiling reports
-        memory_report = self.memory_profiler.get_memory_report()
-        gradient_report = self.gradient_monitor.get_stability_report()
-        time_estimate = self.time_estimator.estimate_total_time(total_training_steps)
+        # Get profiling reports (these should be available since we only call this
+        # when profiling is enabled)
+        memory_report = self.memory_profiler.get_memory_report() if self.memory_profiler else {}
+        gradient_report = self.gradient_monitor.get_stability_report() if self.gradient_monitor else {}
+        # Use effective_max_steps for time estimation to provide accurate estimates
+        # for the actual training that will occur (not the full training duration)
+        time_estimate = (
+            self.time_estimator.estimate_total_time(effective_max_steps)
+            if self.time_estimator
+            else {}
+        )
+
+        if not self.validation_checker:
+            raise RuntimeError("Validation checker not initialized. Enable validation_mode.")
 
         return self.validation_checker.generate_report(
             completed_steps=completed_steps,
@@ -474,6 +502,10 @@ class GRPOTrainer:
 
         # Compute rewards for all rollouts
         rewards = []
+        # Note: We store the last computed reward details for validation as a spot check.
+        # This represents the final rollout response of the final prompt in the batch,
+        # not an aggregate of all rewards. This is intentional for validation purposes
+        # to verify that the reward function returns all expected component scores.
         last_reward_details = None
         for i, (prompt, rollout_responses) in enumerate(zip(prompts, all_responses, strict=False)):
             reference = references[i] if i < len(references) else ""

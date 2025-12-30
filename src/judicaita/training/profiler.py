@@ -219,7 +219,13 @@ class MemoryProfiler:
             try:
                 torch.cuda.reset_peak_memory_stats()
             except Exception:
-                pass
+                # Some CUDA backends or driver/toolkit combinations may not support
+                # resetting peak memory stats. This failure is non-fatal and should
+                # not prevent the training state from being reset.
+                logger.debug(
+                    "Failed to reset CUDA peak memory stats in MemoryProfiler.reset()",
+                    exc_info=True,
+                )
 
 
 class GradientMonitor:
@@ -274,7 +280,13 @@ class GradientMonitor:
                 else:
                     total_norm += param_norm.item() ** 2
 
-        total_norm = total_norm**0.5
+        # Set total_norm to NaN/Inf when gradients are unstable to make instability visible
+        if has_nan:
+            total_norm = float("nan")
+        elif has_inf:
+            total_norm = float("inf")
+        else:
+            total_norm = total_norm**0.5
         self.gradient_norms.append(total_norm)
 
         is_stable = not (has_nan or has_inf)

@@ -201,7 +201,11 @@ class ValidationChecker:
                 details={"missing": missing, "found": list(component_scores.keys())},
             )
 
-        # Verify scores are valid numbers
+        # Verify scores are valid numbers.
+        # Note: All reward components must be normalized to [0, 1] range.
+        # This is enforced in the reward implementations (e.g., CitationAccuracyReward,
+        # ClarityReward) which clamp their outputs. If future reward components operate
+        # on different scales, they must also normalize to [0, 1] before returning.
         invalid_scores = []
         for component, score in component_scores.items():
             if not isinstance(score, (int, float)) or score < 0 or score > 1:

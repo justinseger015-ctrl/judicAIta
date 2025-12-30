@@ -258,6 +258,8 @@ def train_grpo(
                     "[bold yellow]⚠️ Phase 2 validation failed - Review report above[/bold yellow]"
                 )
 
+        # Always show a final metrics summary for all runs
+        console.print(f"Final metrics: {metrics}")
         console.print("[bold green]Training completed successfully![/bold green]")
         console.print(f"Checkpoints saved to: {output_dir}")
 

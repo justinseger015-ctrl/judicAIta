@@ -231,8 +231,9 @@ class LegalBenchDataset:
             return False
 
         # Check for <reasoning>...</reasoning> and <answer>...</answer> tags
-        has_reasoning = bool(re.search(r"<reasoning>.*</reasoning>", text, re.DOTALL))
-        has_answer = bool(re.search(r"<answer>.*</answer>", text, re.DOTALL))
+        # Use non-greedy quantifier to match only content within a single pair of tags
+        has_reasoning = bool(re.search(r"<reasoning>.*?</reasoning>", text, re.DOTALL))
+        has_answer = bool(re.search(r"<answer>.*?</answer>", text, re.DOTALL))
 
         return has_reasoning or has_answer
 

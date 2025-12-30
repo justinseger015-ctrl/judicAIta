@@ -257,9 +257,10 @@ class CitationAccuracyReward(BaseReward):
     CITATION_PATTERNS = [
         r"\d+\s+U\.S\.C\.\s+§?\s*\d+",  # Federal code: 42 U.S.C. § 1983
         r"\d+\s+U\.S\.\s+\d+",  # Supreme Court: 347 U.S. 483
-        r"\d+\s+F\.\d+d\s+\d+",  # Federal Reporter: 123 F.2d 456
+        r"\d+\s+F\.\d+d\s+\d+",  # Federal Reporter (F.2d, F.3d): 123 F.2d 456
+        r"\d+\s+F\.\s+\d+",  # Original Federal Reporter: 123 F. 456
         r"\d+\s+F\.\s*Supp\.\s*\d*d?\s+\d+",  # F. Supp. citations
-        r"[A-Z][a-z]+\s+v\.\s+[A-Z][a-z]+",  # Case names: Brown v. Board
+        r"[A-Z][A-Za-z'\-\s]+\s+v\.\s+[A-Z][A-Za-z'\-\s]+",  # Case names: Brown v. Board of Education, SEC v. Goldman
         r"§\s*\d+[\.\d]*",  # Section symbols: § 1234
         r"\d+\s+S\.\s*Ct\.\s+\d+",  # Supreme Court Reporter
         r"\d+\s+L\.\s*Ed\.\s*\d*d?\s+\d+",  # Lawyers' Edition
@@ -350,8 +351,9 @@ class ClarityReward(BaseReward):
         if not response.strip():
             return RewardResult(score=0.0, details={"reason": "empty_response"})
 
-        # Split into sentences
-        sentences = re.split(r"[.!?]+", response)
+        # Split into sentences using a more robust approach that handles abbreviations
+        # by requiring whitespace after sentence-ending punctuation
+        sentences = re.split(r"(?<=[.!?])\s+", response)
         sentences = [s.strip() for s in sentences if s.strip()]
 
         if not sentences:
@@ -365,24 +367,26 @@ class ClarityReward(BaseReward):
         long_sentences = sum(1 for length in sentence_lengths if length > self.max_sentence_length)
         long_sentence_ratio = long_sentences / len(sentences)
 
-        # Calculate average word length
-        words = response.split()
+        # Calculate average word length (exclude punctuation from word length)
+        words = re.findall(r"\b\w+\b", response)
         if words:
             avg_word_length = sum(len(w) for w in words) / len(words)
         else:
             avg_word_length = 0.0
 
-        # Compute component scores
-        # Sentence length score (prefer target, penalize extremes)
+        # Compute component scores using exponential decay for smoother penalty
+        # Sentence length score (prefer target, use exponential decay for gradual penalty)
         sentence_length_deviation = abs(avg_sentence_length - self.target_avg_sentence_length)
-        sentence_length_score = max(0.0, 1.0 - sentence_length_deviation / self.target_avg_sentence_length)
+        # Exponential decay: score = exp(-k * deviation/target), where k controls decay rate
+        import math
+        sentence_length_score = math.exp(-0.5 * sentence_length_deviation / self.target_avg_sentence_length)
 
         # Penalize long sentences
         long_sentence_penalty = 1.0 - (long_sentence_ratio * 0.5)
 
-        # Word complexity score (prefer moderate word length)
+        # Word complexity score (prefer moderate word length) with exponential decay
         word_length_deviation = abs(avg_word_length - self.target_avg_word_length)
-        word_length_score = max(0.0, 1.0 - word_length_deviation / self.target_avg_word_length)
+        word_length_score = math.exp(-0.5 * word_length_deviation / self.target_avg_word_length)
 
         # Combine scores (weights: sentence length 40%, long sentence penalty 30%, word length 30%)
         score = (
@@ -457,16 +461,24 @@ class CompositeReward(BaseReward):
         # Handle legacy 3-component interface for backward compatibility
         if format_weight is not None or outcome_weight is not None or verbosity_weight is not None:
             # Legacy mode: use old 3-component weights but map to new 4-component structure
+            # Redistribute legacy 3-component weights to 4-component structure proportionally.
+            # - Outcome weight maps to correctness_weight.
+            # - Format weight maps to reasoning_quality_weight.
+            # - Verbosity weight is split between citation_accuracy and clarity (2:1 ratio).
             fw = format_weight if format_weight is not None else 0.3
             ow = outcome_weight if outcome_weight is not None else 0.5
             vw = verbosity_weight if verbosity_weight is not None else 0.2
 
-            # Redistribute weights to 4-component structure
             total_legacy = fw + ow + vw
-            correctness_weight = ow / total_legacy * 0.4 / 0.5  # Scale to new system
-            reasoning_quality_weight = fw / total_legacy * 0.3 / 0.3
-            citation_accuracy_weight = 0.2
-            clarity_weight = 0.1
+            if total_legacy > 0:
+                fw_norm = fw / total_legacy
+                ow_norm = ow / total_legacy
+                vw_norm = vw / total_legacy
+
+                correctness_weight = ow_norm
+                reasoning_quality_weight = fw_norm
+                citation_accuracy_weight = vw_norm * (2.0 / 3.0)
+                clarity_weight = vw_norm * (1.0 / 3.0)
 
             # Map legacy reward instances
             if outcome_reward is not None:
