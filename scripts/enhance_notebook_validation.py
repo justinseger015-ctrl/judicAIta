@@ -527,6 +527,8 @@ print("=" * 60)
 print("📋 FINAL SUBMISSION CHECKLIST")
 print("=" * 60)
 
+import jax
+
 checklist = {
     'Phase 1: Environment Setup': {
         'TPU detected and initialized': 'devices' in globals() and len(jax.devices()) >= 4,
@@ -583,13 +585,16 @@ else:
 print("=" * 60)
 
 # Save checklist to file
+from datetime import datetime
 with open('submission_checklist.json', 'w') as f:
+    # Create checklist dict with proper structure
+    checklist_dict = {}
+    for phase, checks in checklist.items():
+        checklist_dict[phase] = {k: bool(v) for k, v in checks.items()}
+    
     json.dump({
-        'timestamp': str(pd.Timestamp.now()) if 'pd' in globals() else 'N/A',
-        'checklist': {
-            phase: {k: bool(v) for k, v in checks.items()}
-            for phase, checks in checklist.items()
-        },
+        'timestamp': datetime.now().isoformat(),
+        'checklist': checklist_dict,
         'overall_complete': overall_complete,
     }, f, indent=2)
 
