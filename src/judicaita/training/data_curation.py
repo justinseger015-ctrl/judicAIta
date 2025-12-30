@@ -27,9 +27,16 @@ class LegalBenchTask:
     """Configuration for a LegalBench reasoning task."""
 
     name: str
-    description: str
-    reasoning_type: str  # e.g., "rule_qa", "contract_qa", "issue_spotting"
+    description: str = ""  # Optional description of the task
+    reasoning_type: str = ""  # e.g., "rule_qa", "contract_qa", "issue_spotting"
     num_samples: int = 1000
+
+    def __post_init__(self) -> None:
+        """Set defaults for description and reasoning_type if not provided."""
+        if not self.description:
+            self.description = f"Legal reasoning task: {self.name}"
+        if not self.reasoning_type:
+            self.reasoning_type = self.name
 
 
 # Reasoning-heavy tasks from LegalBench
@@ -461,6 +468,7 @@ def create_training_dataset(
     legalbench_tasks: list[LegalBenchTask] | None = None,
     pile_of_law_subsets: list[str] | None = None,
     samples_per_subset: int = 5000,
+    max_pile_of_law_samples: int | None = None,
     generate_cot: bool = True,
     cot_model: str = "google/gemma-2-27b-it",
     cache_dir: Path | None = None,
@@ -472,6 +480,7 @@ def create_training_dataset(
         legalbench_tasks: LegalBench reasoning tasks to include
         pile_of_law_subsets: Pile-of-Law subsets to include
         samples_per_subset: Number of samples per Pile-of-Law subset
+        max_pile_of_law_samples: Maximum total Pile-of-Law samples (overrides samples_per_subset)
         generate_cot: Whether to generate synthetic CoT traces
         cot_model: Model to use for CoT generation
         cache_dir: Cache directory for datasets
@@ -492,11 +501,27 @@ def create_training_dataset(
         cot_generator.initialize()
         legalbench_data = cot_generator.generate_dataset_cot(legalbench_data)
 
+    # Calculate samples_per_subset if max_pile_of_law_samples is specified
+    effective_samples_per_subset = samples_per_subset
+    if max_pile_of_law_samples is not None:
+        subsets = pile_of_law_subsets or PileOfLawDataset.SUBSETS
+        num_subsets = len(subsets)
+        if num_subsets > 0:
+            effective_samples_per_subset = max(1, max_pile_of_law_samples // num_subsets)
+            logger.info(
+                f"Using {effective_samples_per_subset} samples per subset "
+                f"(max_pile_of_law_samples={max_pile_of_law_samples}, {num_subsets} subsets)"
+            )
+
     # Load Pile-of-Law dataset
     pile_of_law_loader = PileOfLawDataset(
-        subsets=pile_of_law_subsets, samples_per_subset=samples_per_subset
+        subsets=pile_of_law_subsets, samples_per_subset=effective_samples_per_subset
     )
     pile_of_law_data = pile_of_law_loader.load(cache_dir=cache_dir)
+
+    # Truncate to max_pile_of_law_samples if specified
+    if max_pile_of_law_samples is not None and len(pile_of_law_data) > max_pile_of_law_samples:
+        pile_of_law_data = pile_of_law_data.select(range(max_pile_of_law_samples))
 
     logger.info(
         f"Training dataset created: {len(legalbench_data)} LegalBench samples, "
