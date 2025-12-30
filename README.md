@@ -176,47 +176,67 @@ See `.env.example` for all configuration options.
 
 ### TPU Training Dependencies (Critical)
 
-> **🔴 ATTENTION KAGGLE HACKATHON PARTICIPANTS:** The training notebook was updated in **December 2025** to fix critical dependency issues. If you encounter `ModuleNotFoundError: No module named 'tunix'`, ensure you're using the latest notebook version.
+> **🔴 ATTENTION KAGGLE HACKATHON PARTICIPANTS:** The training notebook was updated in **December 2025** with comprehensive validation cells for end-to-end submission readiness. If you encounter any issues, refer to the detailed validation guide.
 
 | Package | Required Version | Notes |
 |---------|------------------|-------|
-| `google-tunix` | `>=0.1.0,<=0.1.5` | ⚠️ **NOT** 0.5.0+ (does not exist on PyPI) |
-| `jax[tpu]` | TPU-compatible | Use official libtpu releases, **NOT** `jax==0.4.35` |
-| `flax` | `0.10.2` | Compatible with JAX TPU builds |
+| `google-tunix` | `0.1.0 - 0.1.6` | Max version: 0.1.6 (Dec 2025), **NOT** 0.5.0+ |
+| `jax` | TPU-compatible (0.8.x) | Use `jax[tpu]` with libtpu releases |
+| `flax` | `0.10.2` or `0.12.x` | Compatible with JAX TPU builds |
+| `transformers` | `>=4.40.0,<=4.57.1` | For Gemma model support |
 
 **Common Pitfalls:**
-- ❌ `pip install google-tunix>=0.5.0` → Package doesn't exist, causes `ModuleNotFoundError`
+- ❌ `pip install google-tunix>=0.5.0` → Version doesn't exist, causes `ModuleNotFoundError`
 - ❌ `pip install jax==0.4.35 jaxlib==0.4.35` → Incompatible with Colab TPU runtime
-- ✅ Use: `pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html`
+- ✅ Use: `pip install git+https://github.com/google/tunix` (recommended)
+- ✅ Use: `pip install git+https://github.com/jax-ml/jax` for latest TPU support
 
 **Expected Warnings (Harmless):**
 - `jax_cuda12_plugin` warnings are **normal** on Colab TPU and can be safely ignored
 - These appear because Colab has GPU packages pre-installed alongside TPU runtime
 
-**Phase 1 Validation:**
-Before proceeding with training, complete the **Phase 1: Colab TPU Smoke Test** validation cells in the notebook to verify:
-- ✅ Package versions (google-tunix, jax, flax)
-- ✅ TPU device detection (8 cores expected for TPU v2-8)
-- ✅ Import verification (Tunix, JAX, Flax)
-- ✅ HBM memory visibility
-- ✅ LoRA adapter configuration
+### 📋 Complete Validation Guide (4 Phases)
 
-See [Phase 1 Validation Guide](examples/notebooks/README.md#-phase-1-colab-tpu-smoke-test--dependency-validation) for detailed instructions.
+**NEW:** Comprehensive validation guide covering all phases from environment setup to submission:
 
-For complete version compatibility details, see the [Version Compatibility Summary](examples/notebooks/train_tunix_reasoning.ipynb) in the training notebook.
+**[📖 Complete Validation Guide](docs/COLAB_VALIDATION_GUIDE.md)** - Detailed validation procedures including:
 
-### 📋 Phase 1: TPU Smoke Test (Recommended)
+1. **Phase 1: Environment & Dependency Validation**
+   - ✅ TPU runtime configuration
+   - ✅ Package version verification
+   - ✅ Import validation (Tunix, JAX, Flax)
+   - ✅ HBM memory check
+   - ✅ LoRA adapter configuration
 
-Before running full training, validate your Colab TPU environment using the **Phase 1 validation cells** in the notebook:
+2. **Phase 2: Training Pipeline Verification**
+   - ✅ Model download & initialization
+   - ✅ Dataset preparation validation
+   - ✅ GRPO configuration review
+   - ✅ Reward function testing
+   - ✅ Training setup validation
 
-1. **Run Phase 1 validation cells** after Step 1 installation
-2. **Verify all checks pass:**
-   - ✅ 8 TPU cores detected
-   - ✅ Tunix/Flax/JAX imports successful
-   - ✅ LoRA adapter modules accessible
-3. **Proceed to Phase 2** training only after validation passes
+3. **Phase 3: Inference & Output Quality**
+   - ✅ XML format validation
+   - ✅ Reasoning quality assessment
+   - ✅ Citation extraction testing
+   - ✅ Output quality metrics
 
-See [Phase 1 Validation Guide](examples/notebooks/README.md#-phase-1-tpu-smoke-test--validation) for detailed checklist and troubleshooting.
+4. **Phase 4: Submission Preparation**
+   - ✅ Package structure validation
+   - ✅ JSON file validation
+   - ✅ Final submission checklist
+
+**Quick Start Validation:**
+
+Before running full training, execute the validation cells in the notebook:
+
+1. Run **Phase 1 validation cells** after Step 1 installation
+2. Verify all checks pass (8 TPU cores, imports successful)
+3. Proceed to **Phase 2** training after validation
+4. Use **Phase 3** cells to validate inference quality
+5. Complete **Phase 4** checklist before submission
+
+See the [Validation Guide](docs/COLAB_VALIDATION_GUIDE.md) for detailed procedures and troubleshooting.
 
 ## 🔧 Training & Fine-tuning
 
@@ -226,9 +246,15 @@ For training Gemma models with GRPO on Google Cloud TPU using the Tunix framewor
 
 **Notebook:** [`examples/notebooks/train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb)
 
-> 📢 **Updated December 2025:** This notebook now includes **Phase 1 validation cells** for environment setup verification. See [Phase 1 Guide](examples/notebooks/README.md) for complete smoke test instructions.
+> 📢 **Updated December 2025:** This notebook now includes **comprehensive validation cells** covering all 4 phases:
+> - **Phase 1**: Environment & dependency validation (TPU, imports, packages)
+> - **Phase 2**: Training pipeline verification (setup, config, reward functions)
+> - **Phase 3**: Inference & output quality (XML format, reasoning, citations)
+> - **Phase 4**: Submission preparation (package validation, checklist)
 > 
-> Previous update fixed critical dependency installation errors. See [PR #13](https://github.com/clduab11/judicAIta/pull/13) for details.
+> **Total validation cells**: 11 new cells added for end-to-end validation
+> 
+> See [Complete Validation Guide](docs/COLAB_VALIDATION_GUIDE.md) for detailed procedures.
 
 This specialized training approach uses:
 - **Framework:** JAX/Flax with Google Tunix (different from main PyTorch codebase)
@@ -239,76 +265,109 @@ This specialized training approach uses:
 
 **Dependency Requirements:**
 ```bash
-# ✅ Correct installation (from notebook Step 1)
-!pip install -q "google-tunix[tpu]>=0.1.0,<=0.1.5"
-!pip install -q "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
-!pip install -q flax==0.10.2
+# ✅ Recommended installation (from notebook Step 1 - December 2025)
+!pip install -q dotenv kagglehub ipywidgets tensorflow tensorflow_datasets tensorboardX
+!pip install -q transformers>=4.40.0 grain huggingface_hub>=0.20.0 datasets>=2.14.0
+!pip install -q 'numpy>2' sentencepiece>=0.1.99 safetensors>=0.4.0
+
+# Install JAX, Tunix, Qwix, and Flax from GitHub (latest versions)
+!pip install -q git+https://github.com/jax-ml/jax
+!pip install git+https://github.com/google/tunix
+!pip install git+https://github.com/google/qwix
+!pip uninstall -q flax -y
+!pip install git+https://github.com/google/flax
 
 # ❌ Do NOT use these (outdated/incorrect)
 # !pip install "google-tunix>=0.5.0"  # Version doesn't exist!
 # !pip install jax==0.4.35 jaxlib==0.4.35  # Incompatible with Colab TPU
 ```
 
+**Note:** After installation, you **MUST** restart the Colab runtime before proceeding.
+
 **Prerequisites:**
 - Google Colab account with TPU access
 - Hugging Face account for model downloads
 - Kaggle account for submissions
 
-**Quick Start:**
+**Quick Start with Validation:**
 1. Open [`train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb) in Colab
 2. Set runtime to TPU (Runtime → Change runtime type → TPU)
-3. Run Step 1 (dependencies) - expect `jax_cuda12_plugin` warnings (harmless)
-4. **Restart runtime** when prompted
-5. **Run Phase 1 validation cells** to verify TPU and imports
-6. Continue with training steps after validation passes
+3. Run **Step 1** (dependencies) - expect `jax_cuda12_plugin` warnings (harmless)
+4. **Restart runtime** when installation completes
+5. Run **Step 2** (TPU initialization)
+6. **Execute Phase 1 validation cells** - verify all checks pass:
+   - ✅ 8 TPU cores detected
+   - ✅ Tunix/Flax/JAX imports successful
+   - ✅ Package versions correct
+7. Continue with Steps 3-5 (model download, dataset prep, reward function)
+8. **Execute Phase 2 validation cells** - verify training setup
+9. Run training execution
+10. **Execute Phase 3 validation cells** - verify output quality
+11. Export adapters and run **Phase 4 validation** - prepare submission
+
+**Complete Validation Flow:**
+- **Phase 1** (pre-training): Environment and dependencies
+- **Phase 2** (pre-training): Training pipeline setup
+- **Phase 3** (post-training): Inference and output quality
+- **Phase 4** (pre-submission): Package validation and checklist
 
 **Quick Troubleshooting:**
 | Error | Cause | Solution |
 |-------|-------|----------|
-| `ModuleNotFoundError: No module named 'tunix'` | Wrong Tunix version | Use `>=0.1.0,<=0.1.5` |
-| JAX TPU initialization fails | Wrong JAX version | Use `jax[tpu]` with libtpu releases |
+| `ModuleNotFoundError: No module named 'tunix'` | Wrong install method | Use `git+https://github.com/google/tunix` |
+| JAX TPU initialization fails | Wrong JAX version | Use `git+https://github.com/jax-ml/jax` |
 | `jax_cuda12_plugin` warnings | Normal for Colab | Ignore - harmless for TPU |
+| Runtime not restarted | Skipped Step 4 | Runtime → Restart runtime after Step 1 |
+
+**Complete Troubleshooting:** See [Validation Guide](docs/COLAB_VALIDATION_GUIDE.md#troubleshooting-reference) for detailed solutions to all common issues.
 
 See [examples/notebooks/README.md](examples/notebooks/README.md) for more training options including PyTorch-based GRPO training.
 
 ## 📚 Documentation
 
+- **[Complete Colab Validation Guide](docs/COLAB_VALIDATION_GUIDE.md)** - NEW! Comprehensive 4-phase validation
 - [Architecture Overview](docs/architecture/overview.md)
 - [API Reference](docs/api/reference.md)
 - [User Guide](docs/guides/user-guide.md)
 - [GRPO Training Guide](docs/GRPO_TRAINING.md)
 - [Tunix/TPU Training Notebook](examples/notebooks/train_tunix_reasoning.ipynb)
+- [Notebook README](examples/notebooks/README.md) - Training options and Phase 1 guide
 - [Contributing Guide](CONTRIBUTING.md)
 - [Development Setup](docs/guides/development.md)
 
 ## 🐛 Known Issues & Troubleshooting
 
-### TPU Training Notebook Issues
+### Quick Reference
 
-| Issue | Cause | Solution |
-|-------|-------|----------|
-| `ModuleNotFoundError: No module named 'tunix'` | Incorrect Tunix version | Install `google-tunix[tpu]>=0.1.0,<=0.1.5` (max is 0.1.5, **NOT** 0.5.0) |
-| JAX TPU initialization fails | Incompatible JAX version | Use `pip install "jax[tpu]" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html` |
-| `RuntimeError: TPU not found` | Wrong Colab runtime | Set runtime to TPU: Runtime → Change runtime type → TPU |
-| Imports fail after install | Runtime not restarted | Restart runtime after Step 1, then continue from Step 2 |
+For comprehensive troubleshooting covering all phases, see the **[Complete Troubleshooting Guide](docs/COLAB_VALIDATION_GUIDE.md#troubleshooting-reference)**.
+
+### Most Common Issues
+
+| Issue | Solution | Guide Section |
+|-------|----------|---------------|
+| `ModuleNotFoundError: No module named 'tunix'` | Install from GitHub: `git+https://github.com/google/tunix` | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#phase-1-environment--dependency-validation) |
+| JAX TPU initialization fails | Install from GitHub: `git+https://github.com/jax-ml/jax` | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#14-tpu-detection-validation) |
+| `RuntimeError: TPU not found` | Set runtime to TPU: Runtime → Change runtime type | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#11-colab-runtime-configuration) |
+| Imports fail after install | Restart runtime after Step 1 | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#13-runtime-restart-checkpoint) |
+| Out of Memory during training | Reduce batch_size, num_generations | [Phase 2](docs/COLAB_VALIDATION_GUIDE.md#phase-2-training-pipeline-verification) |
+| All rewards are 0.0 | Check XML format validation | [Phase 3](docs/COLAB_VALIDATION_GUIDE.md#phase-3-inference--output-quality) |
 
 ### Expected Warnings (Safe to Ignore)
 
 - **`jax_cuda12_plugin` warnings**: Normal on Google Colab TPU runtime. These appear because Colab has GPU packages pre-installed. They do not affect TPU training.
 
-### Version Constraints
+### Complete Troubleshooting
 
-**Google Tunix:**
-- Maximum available version: **0.1.5** (as of December 2025)
-- Do NOT use `>=0.5.0` - this version does not exist on PyPI
-- Optimized for Kaggle's Google Tunix hackathon requirements
+The validation guide includes detailed troubleshooting for:
+- Environment setup issues
+- Dependency conflicts
+- TPU initialization problems
+- Training pipeline errors
+- Memory management
+- Output quality issues
+- Submission package problems
 
-**JAX for TPU:**
-- Use `jax[tpu]` with official libtpu releases
-- JAX 0.4+ requires TPU VMs (not available on Colab)
-- Colab TPU runtime requires TPU-specific builds
-
-For comprehensive troubleshooting, see the **Troubleshooting Guide** section in [`train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb).
+**[→ View Complete Troubleshooting Guide](docs/COLAB_VALIDATION_GUIDE.md#troubleshooting-reference)**
 
 ## 🧪 Testing
 
