@@ -68,7 +68,6 @@ Add before training to estimate if you'll complete within the session:
 def estimate_training_time(
     num_examples: int,
     batch_size: int,
-    steps_per_example: int = 1,
     seconds_per_step: float = 2.0,
     num_epochs: int = 1
 ) -> dict:

@@ -19,7 +19,7 @@ def validate_max_tokens(max_tokens: int) -> tuple[bool, str]:
     """
     Validate that max_tokens is within competition limits.
     
-    Competition requirement: Max output token <1K
+    Competition requirement: Max output tokens <1K
     
     Args:
         max_tokens: The configured maximum tokens for generation

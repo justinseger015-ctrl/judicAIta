@@ -147,7 +147,7 @@ The Reasoning Quality component has the largest impact on format compliance, sug
 
 ### Learnings
 
-We learned that **reward shaping is widely more effective than prompt engineering** for complex logical tasks. Ambiguous prompts often led to mode collapse, but a strong, multi-component reward signal rapidly corrected behavior.
+We learned that **reward shaping is far more effective than prompt engineering** for complex logical tasks. Ambiguous prompts often led to mode collapse, but a strong, multi-component reward signal rapidly corrected behavior.
 
 The combination of GRPO's memory efficiency with LoRA's parameter efficiency makes it possible to train sophisticated reasoning models on accessible hardware within competition constraints.
 
