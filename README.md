@@ -119,7 +119,7 @@ make docker-down
 make docker-logs
 ```
 
-**⚠️ Security Warning**: The `docker-compose.yml` contains hardcoded credentials (`POSTGRES_PASSWORD=password`) for development convenience only. **Do not use in production** without proper secret management.
+**⚠️ Security Warning**: The `docker-compose.yml` contains hardcoded credentials (`POSTGRES_PASSWORD=password`) for development convenience only. **Do not use in production** - use environment variables or a secret management tool like Docker secrets, HashiCorp Vault, or AWS Secrets Manager.
 
 The Docker configuration includes volume mounts for `./data`, `./logs`, and `./uploads` directories for development.
 
