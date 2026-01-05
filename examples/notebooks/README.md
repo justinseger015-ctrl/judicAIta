@@ -244,10 +244,11 @@ config = TrainingConfig(
 
 ```python
 # Validate advantage computation is working
-advantages = trainer._compute_advantages(rewards)
-assert not torch.isnan(advantages).any(), "NaN in advantages"
-assert not torch.isinf(advantages).any(), "Inf in advantages"
-print(f"Advantage range: [{advantages.min():.2f}, {advantages.max():.2f}]")
+# Note: Access training metrics through the train() return value
+# or add a public validation method to GRPOTrainer
+training_metrics = trainer.train()
+if 'advantages' in training_metrics:
+    print(f"Advantage stats from training metrics")
 ```
 
 ### Example Copilot Prompts

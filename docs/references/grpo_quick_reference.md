@@ -99,17 +99,18 @@ if not gradient_is_stable:
 **Pattern**: Batch reward computation
 
 ```python
-# Instead of:
+# Instead of processing one at a time:
 for response in responses:
     reward = reward_fn.compute(prompt, response, reference)
 
-# Use batched:
-def batch_compute_rewards(prompts, responses, references):
+# Use batched computation for multiple responses:
+def batch_compute_rewards(responses, reference):
+    """Compute rewards for multiple responses to same prompt."""
     # Vectorize format checking
-    format_scores = [self._check_format(r) for r in responses]
+    format_scores = [check_format(r) for r in responses]
     
-    # Parallel semantic similarity
-    similarity_scores = batch_semantic_similarity(responses, references)
+    # Batch semantic similarity computation
+    similarity_scores = batch_semantic_similarity(responses, reference)
     
     return combine_scores(format_scores, similarity_scores)
 ```
@@ -207,9 +208,15 @@ if torch.cuda.is_available():
 ```python
 # Add to notebook
 import jax
+
+# Print device memory summary
 for device in jax.devices():
-    stats = device.memory_stats()
-    print(f"HBM: {stats['bytes_in_use'] / 1e9:.2f} GB")
+    print(f"Device: {device}")
+    # Use local_devices() and live_buffers() for memory inspection
+    print(f"  Type: {device.device_kind}")
+
+# Alternative: Use JAX profiler for detailed memory info
+# jax.profiler.device_memory_profile() for TPU memory analysis
 ```
 
 **Copilot Prompt**:

@@ -240,14 +240,14 @@ advantages.div_(std)
 **Pattern: Selective Checkpointing**
 
 ```python
-# Checkpoint specific layers
+# Checkpoint specific transformer layers
 from torch.utils.checkpoint import checkpoint
 
-def forward_with_checkpointing(self, x):
-    # Checkpoint expensive layers
-    x = checkpoint(self.layer1, x)
-    x = checkpoint(self.layer2, x)
-    return self.output(x)
+def forward_with_checkpointing(model, hidden_states):
+    # Checkpoint expensive transformer blocks
+    for layer in model.transformer.layers:
+        hidden_states = checkpoint(layer, hidden_states)
+    return model.lm_head(hidden_states)
 ```
 
 **Pattern: Enable in Model**
