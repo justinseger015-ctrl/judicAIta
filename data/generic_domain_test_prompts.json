@@ -1,0 +1,231 @@
+{
+  "description": "Generic domain test prompts for evaluating model generalization beyond legal domain",
+  "version": "1.0",
+  "created": "2026-01-05",
+  "competition": "Kaggle Google Tunix Hackathon",
+  "domains": {
+    "creative_writing": {
+      "description": "Tests ability to generate creative, well-structured narratives",
+      "difficulty": "medium",
+      "prompts": [
+        {
+          "id": "cw_001",
+          "prompt": "Write a short story opening paragraph about a detective who discovers that their own reflection in the mirror is acting independently.",
+          "evaluation_criteria": ["creativity", "narrative structure", "vivid imagery"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "cw_002",
+          "prompt": "Compose a poem (4-8 lines) about the feeling of watching a sunset over the ocean.",
+          "evaluation_criteria": ["emotional depth", "imagery", "rhythm"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "cw_003",
+          "prompt": "Write a dialogue between two strangers who meet at a bus stop during a sudden rainstorm.",
+          "evaluation_criteria": ["character voice", "natural dialogue", "scene setting"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "cw_004",
+          "prompt": "Describe a futuristic city where plants have become the primary architects, designing buildings that grow organically.",
+          "evaluation_criteria": ["world-building", "descriptive language", "originality"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "cw_005",
+          "prompt": "Write a monologue from the perspective of an old lighthouse keeper on their last night of duty.",
+          "evaluation_criteria": ["character depth", "emotional resonance", "voice consistency"],
+          "expected_format": "xml"
+        }
+      ]
+    },
+    "creative_ideation": {
+      "description": "Tests brainstorming and creative problem-solving abilities",
+      "difficulty": "medium",
+      "prompts": [
+        {
+          "id": "ci_001",
+          "prompt": "Generate 5 innovative product ideas that combine fitness technology with sustainable energy production.",
+          "evaluation_criteria": ["originality", "feasibility", "clear explanation"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "ci_002",
+          "prompt": "Propose 3 creative solutions for reducing food waste in urban restaurants.",
+          "evaluation_criteria": ["practicality", "innovation", "reasoning"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "ci_003",
+          "prompt": "Design a unique board game concept that teaches environmental science to children aged 8-12.",
+          "evaluation_criteria": ["educational value", "engagement", "age-appropriateness"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "ci_004",
+          "prompt": "Suggest 5 ways that libraries could reinvent themselves for the digital age while maintaining community value.",
+          "evaluation_criteria": ["creativity", "community focus", "technological integration"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "ci_005",
+          "prompt": "Brainstorm 3 unconventional uses for recycled plastic that could create new industries.",
+          "evaluation_criteria": ["innovation", "environmental impact", "economic viability"],
+          "expected_format": "xml"
+        }
+      ]
+    },
+    "summarization": {
+      "description": "Tests ability to distill complex information into concise summaries",
+      "difficulty": "medium",
+      "prompts": [
+        {
+          "id": "sum_001",
+          "prompt": "Summarize the key differences between machine learning and traditional programming in 3-4 sentences for a non-technical audience.",
+          "evaluation_criteria": ["accuracy", "conciseness", "accessibility"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sum_002",
+          "prompt": "Provide a brief summary of the main arguments for and against renewable energy adoption.",
+          "evaluation_criteria": ["balance", "comprehensiveness", "clarity"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sum_003",
+          "prompt": "Summarize the process of photosynthesis in 2-3 sentences for a high school student.",
+          "evaluation_criteria": ["scientific accuracy", "appropriate level", "completeness"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sum_004",
+          "prompt": "Create a one-paragraph executive summary of the benefits and challenges of remote work.",
+          "evaluation_criteria": ["business relevance", "balanced perspective", "actionable insights"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sum_005",
+          "prompt": "Summarize the main principles of the scientific method in bullet points.",
+          "evaluation_criteria": ["accuracy", "logical sequence", "completeness"],
+          "expected_format": "xml"
+        }
+      ]
+    },
+    "math": {
+      "description": "Tests mathematical reasoning and problem-solving",
+      "difficulty": "varied",
+      "prompts": [
+        {
+          "id": "math_001",
+          "prompt": "A train travels 120 miles in 2 hours. What is its average speed, and how long would it take to travel 300 miles at this speed?",
+          "ground_truth": "Average speed is 60 mph. Time for 300 miles = 5 hours.",
+          "evaluation_criteria": ["correct calculation", "step-by-step reasoning", "clear answer"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "math_002",
+          "prompt": "If a store offers a 20% discount on a $150 item, and then applies an additional 10% discount on the reduced price, what is the final price?",
+          "ground_truth": "Final price is $108.",
+          "evaluation_criteria": ["correct multi-step calculation", "clear reasoning", "accurate answer"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "math_003",
+          "prompt": "Solve for x: 3x + 7 = 22. Explain your steps.",
+          "ground_truth": "x = 5",
+          "evaluation_criteria": ["correct solution", "step-by-step explanation", "verification"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "math_004",
+          "prompt": "A rectangle has a perimeter of 36 cm. If the length is twice the width, find the dimensions of the rectangle.",
+          "ground_truth": "Width = 6 cm, Length = 12 cm",
+          "evaluation_criteria": ["correct setup", "algebraic reasoning", "accurate dimensions"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "math_005",
+          "prompt": "Calculate the compound interest on $1000 at 5% annual interest rate compounded annually for 3 years.",
+          "ground_truth": "Compound interest = $157.63 (approximately)",
+          "evaluation_criteria": ["correct formula application", "accurate calculation", "clear presentation"],
+          "expected_format": "xml"
+        }
+      ]
+    },
+    "coding": {
+      "description": "Tests programming concepts and code generation",
+      "difficulty": "medium",
+      "prompts": [
+        {
+          "id": "code_001",
+          "prompt": "Write a Python function that checks if a given string is a palindrome. Explain your approach.",
+          "evaluation_criteria": ["correct logic", "clean code", "explanation quality"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "code_002",
+          "prompt": "Explain the difference between a list and a dictionary in Python, and provide examples of when to use each.",
+          "evaluation_criteria": ["technical accuracy", "clear examples", "practical guidance"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "code_003",
+          "prompt": "What is recursion in programming? Provide a simple example using factorial calculation.",
+          "evaluation_criteria": ["concept explanation", "working example", "base case identification"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "code_004",
+          "prompt": "Debug the following code and explain the issue: for i in range(5): print(i) if i = 3: break",
+          "evaluation_criteria": ["error identification", "correct fix", "explanation of the bug"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "code_005",
+          "prompt": "Write a function that takes a list of numbers and returns the sum of all even numbers.",
+          "evaluation_criteria": ["correct implementation", "edge case handling", "code clarity"],
+          "expected_format": "xml"
+        }
+      ]
+    },
+    "basic_science": {
+      "description": "Tests understanding of fundamental scientific concepts",
+      "difficulty": "medium",
+      "prompts": [
+        {
+          "id": "sci_001",
+          "prompt": "Explain why the sky appears blue during the day but red/orange at sunset.",
+          "evaluation_criteria": ["scientific accuracy", "clear explanation", "completeness"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sci_002",
+          "prompt": "What is the difference between speed and velocity in physics? Provide examples.",
+          "evaluation_criteria": ["correct definitions", "illustrative examples", "clarity"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sci_003",
+          "prompt": "Describe the water cycle and its main stages.",
+          "evaluation_criteria": ["accuracy", "completeness", "logical flow"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sci_004",
+          "prompt": "Explain how vaccines work to protect against diseases.",
+          "evaluation_criteria": ["scientific accuracy", "accessible language", "balanced information"],
+          "expected_format": "xml"
+        },
+        {
+          "id": "sci_005",
+          "prompt": "What is the difference between an atom and a molecule? Give examples of each.",
+          "evaluation_criteria": ["correct definitions", "clear examples", "distinction clarity"],
+          "expected_format": "xml"
+        }
+      ]
+    }
+  },
+  "usage_notes": "These prompts are designed to test the model's ability to generalize the XML reasoning format across domains. Each response should use <reasoning>...</reasoning> and <answer>...</answer> tags.",
+  "total_prompts": 30
+}

@@ -11,6 +11,27 @@ from typing import Any
 from loguru import logger
 
 
+# Competition requirement: max output tokens < 1K
+MAX_TOKENS_LIMIT = 1000
+
+
+def validate_max_tokens(max_tokens: int) -> tuple[bool, str]:
+    """
+    Validate that max_tokens is within competition limits.
+    
+    Competition requirement: Max output token <1K
+    
+    Args:
+        max_tokens: The configured maximum tokens for generation
+        
+    Returns:
+        Tuple of (is_valid, message)
+    """
+    if max_tokens <= MAX_TOKENS_LIMIT:
+        return True, f"max_tokens={max_tokens} is within competition limit ({MAX_TOKENS_LIMIT})"
+    return False, f"max_tokens={max_tokens} exceeds competition limit ({MAX_TOKENS_LIMIT})"
+
+
 @dataclass
 class ValidationResult:
     """Result of a single validation check."""
