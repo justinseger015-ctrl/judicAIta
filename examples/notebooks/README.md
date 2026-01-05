@@ -181,6 +181,102 @@ judicaita evaluate-model ./checkpoints/grpo/final --max-samples 100
 5. **Reward Functions**: Multi-component rewards for format, outcome, and verbosity
 6. **Evaluation**: Comprehensive metrics including ROUGE, BLEU, and task accuracy
 
+## Using Copilot for GRPO Development
+
+GitHub Copilot is configured to assist with GRPO development in this repository.
+
+### Getting Started with Copilot
+
+1. Ensure GitHub Copilot is enabled in your IDE
+2. Reference [`.github/copilot-instructions.md`](../../.github/copilot-instructions.md) for project context
+3. Use specific prompts to trigger GRPO-aware suggestions
+
+### GRPO Reference Documentation
+
+- **[GRPO Fast Patterns](../../docs/references/grpo_fast_patterns.md)**: Advanced patterns from AllenAI's grpo_fast.py
+- **[Quick Reference](../../docs/references/grpo_quick_reference.md)**: Common scenarios with code examples
+- **[Training Guide](../../docs/GRPO_TRAINING.md)**: Complete training documentation
+
+### Troubleshooting "GRPO Gremlins"
+
+Common issues and their solutions using grpo_fast.py patterns:
+
+#### TPU Issues
+
+| Problem | Solution |
+|---------|----------|
+| TPU not detected | `Runtime → Change runtime type → TPU`, then restart |
+| Wrong device count | Verify with `len(jax.devices())`, expect 8 for TPU v2-8 |
+| `jax_cuda12_plugin` warnings | **Safe to ignore** - normal on Colab TPU |
+
+#### Dependency Resolution
+
+```bash
+# Clean install order (if imports fail)
+pip uninstall jax jaxlib flax -y
+pip install git+https://github.com/jax-ml/jax
+pip install git+https://github.com/google/tunix
+pip install git+https://github.com/google/flax
+# RESTART RUNTIME after installation
+```
+
+#### Training Stability
+
+| Issue | Pattern from grpo_fast.py |
+|-------|---------------------------|
+| Extreme advantage values | Add clipping: `torch.clamp(advantages, -10, 10)` |
+| Gradient explosions | Reduce `max_grad_norm` from 1.0 to 0.5 |
+| Loss becomes NaN | Check gradient monitor, reduce learning rate |
+
+#### Memory Optimization
+
+```python
+# If OOM errors occur:
+config = TrainingConfig(
+    batch_size=2,              # Reduce
+    gradient_accumulation_steps=8,  # Increase
+    num_rollouts=2,            # Reduce
+    bf16=True,                 # Enable
+)
+```
+
+#### Advantage Computation Validation
+
+```python
+# Validate advantage computation is working
+# Note: Access training metrics through the train() return value
+# or add a public validation method to GRPOTrainer
+training_metrics = trainer.train()
+if 'advantages' in training_metrics:
+    print(f"Advantage stats from training metrics")
+```
+
+### Example Copilot Prompts
+
+For notebook development:
+
+```
+"Add TPU initialization validation cell"
+"Create HBM memory monitoring"
+"Add dependency version checking"
+```
+
+For GRPO improvements:
+
+```
+"Add advantage clipping to _compute_advantages following grpo_fast.py"
+"Implement gradient checkpointing for memory efficiency"
+"Add KL penalty to the loss function"
+```
+
+For debugging:
+
+```
+"Add gradient norm logging"
+"Create reward breakdown visualization"
+"Add checkpoint recovery logic"
+```
+
 ## Configuration
 
 See `TrainingConfig` in `judicaita/training/grpo_trainer.py` for all configuration options.
