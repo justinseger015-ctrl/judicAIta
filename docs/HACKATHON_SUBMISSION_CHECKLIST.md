@@ -1,9 +1,9 @@
 # JudicAIta Hackathon Submission Checklist
 
 **Hackathon**: Google Tunix / Kaggle Hackathon  
-**Deadline**: January 16, 2026  
+**Deadline**: January 12, 2026  
 **Repository**: https://github.com/clduab11/judicAIta  
-**Related Issue**: LEG-7
+**Related Issue**: LEG-7, PDE-21, LEG-12
 
 ---
 

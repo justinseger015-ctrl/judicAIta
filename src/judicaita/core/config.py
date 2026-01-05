@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     # Model Configuration
     model_temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Model temperature")
     model_max_tokens: int = Field(
-        default=2048, ge=1, le=8192, description="Maximum tokens for generation"
+        default=512, ge=1, le=1000, description="Maximum tokens for generation (competition limit: 1000)"
     )
     model_top_p: float = Field(default=0.95, ge=0.0, le=1.0, description="Top-p sampling")
 

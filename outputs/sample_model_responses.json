@@ -1,0 +1,42 @@
+{
+  "description": "Sample model responses for Kaggle hackathon evaluation",
+  "version": "1.0",
+  "created": "2026-01-05",
+  "model": "google/gemma-3-1b-it with GRPO fine-tuning",
+  "max_tokens": 512,
+  "samples": [
+    {
+      "id": "sample_001",
+      "domain": "legal",
+      "prompt": "Is a verbal contract for selling a house enforceable?",
+      "response": "<reasoning>\nThe question concerns the enforceability of a verbal (oral) contract for the sale of real property.\n\nStep 1: The Statute of Frauds is the governing legal principle. This statute requires certain contracts to be evidenced by a signed writing.\n\nStep 2: Real estate transactions are specifically enumerated under the Statute of Frauds. This includes sales of land, leases for more than one year, and mortgages.\n\nStep 3: Applying this rule to a verbal house sale agreement: since no written contract exists, the agreement fails to meet the statutory requirement.\n\nStep 4: While there are limited exceptions (such as part performance in some jurisdictions), the general rule is that verbal real estate contracts are unenforceable.\n</reasoning>\n<answer>\nNo, a verbal contract to sell a house is generally not enforceable. The Statute of Frauds requires contracts for the sale of real property to be in writing and signed by the party to be charged.\n</answer>",
+      "xml_valid": true,
+      "reasoning_tokens": 145,
+      "answer_tokens": 48
+    },
+    {
+      "id": "sample_002",
+      "domain": "math",
+      "prompt": "A train travels 120 miles in 2 hours. What is its average speed?",
+      "response": "<reasoning>\nTo find the average speed, I need to divide the total distance by the total time.\n\nStep 1: Identify the values\n- Distance = 120 miles\n- Time = 2 hours\n\nStep 2: Apply the speed formula\n- Speed = Distance / Time\n- Speed = 120 miles / 2 hours\n- Speed = 60 miles per hour\n</reasoning>\n<answer>\nThe train's average speed is 60 miles per hour.\n</answer>",
+      "xml_valid": true,
+      "reasoning_tokens": 72,
+      "answer_tokens": 10
+    },
+    {
+      "id": "sample_003",
+      "domain": "basic_science",
+      "prompt": "Why does the sky appear blue?",
+      "response": "<reasoning>\nThe blue color of the sky is due to a phenomenon called Rayleigh scattering.\n\nStep 1: Sunlight composition - Sunlight contains all colors of visible light (red, orange, yellow, green, blue, violet).\n\nStep 2: Scattering mechanism - When sunlight enters Earth's atmosphere, it collides with gas molecules (primarily nitrogen and oxygen). Shorter wavelengths (blue, violet) scatter more than longer wavelengths (red, orange).\n\nStep 3: Human perception - Although violet scatters even more than blue, our eyes are more sensitive to blue light, and some violet light is absorbed higher in the atmosphere.\n</reasoning>\n<answer>\nThe sky appears blue because of Rayleigh scattering. Sunlight interacts with atmospheric gas molecules, and shorter blue wavelengths scatter more efficiently than longer red wavelengths. This scattered blue light reaches our eyes from all directions, making the sky appear blue.\n</answer>",
+      "xml_valid": true,
+      "reasoning_tokens": 112,
+      "answer_tokens": 52
+    }
+  ],
+  "metrics": {
+    "xml_compliance_rate": 1.0,
+    "avg_reasoning_tokens": 110,
+    "avg_answer_tokens": 37
+  },
+  "note": "These are example responses. Actual model outputs will be generated during training on Kaggle TPU."
+}

@@ -74,7 +74,7 @@ class TrainingConfig:
 
     # Evaluation
     eval_batch_size: int = 8
-    generation_max_length: int = 1024
+    generation_max_length: int = 512  # Competition limit: max output tokens < 1K
     generation_temperature: float = 0.7
     generation_top_p: float = 0.95
 

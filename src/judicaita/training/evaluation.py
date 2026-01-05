@@ -86,7 +86,7 @@ class EvaluationHarness:
         # Default generation config
         if generation_config is None:
             generation_config = {
-                "max_new_tokens": 1024,
+                "max_new_tokens": 512,  # Competition limit: max output tokens < 1K
                 "temperature": 0.7,
                 "top_p": 0.95,
                 "do_sample": True,

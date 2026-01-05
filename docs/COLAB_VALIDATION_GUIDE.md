@@ -2,9 +2,104 @@
 
 > **Purpose**: Complete validation guide for `examples/notebooks/train_tunix_reasoning.ipynb` to ensure hackathon submission readiness.
 
-**Last Updated**: December 2025  
-**Target Hackathon**: Google Tunix / Kaggle Hackathon (Deadline: January 16, 2026)  
-**Related Issue**: LEG-7
+**Last Updated**: January 2026  
+**Target Hackathon**: Google Tunix / Kaggle Hackathon (Deadline: January 12, 2026)  
+**Related Issue**: LEG-7, PDE-21, LEG-12
+
+---
+
+## TPU Session Tracking
+
+**IMPORTANT**: Kaggle TPU usage is limited to **20 hours per week** and **9 hours per session**.
+
+### Session Time Management
+
+| Limit | Value | Notes |
+|-------|-------|-------|
+| Weekly TPU Quota | 20 hours | Resets weekly |
+| Max Session Duration | 9 hours | Hard limit per notebook run |
+| Recommended Checkpoint Interval | 30 minutes | Prevents data loss |
+| Target Training Time | <8.5 hours | Leave buffer for setup |
+
+### Time Tracking Cell
+
+Add this cell early in your notebook to track session time:
+
+```python
+import time
+from datetime import datetime, timedelta
+
+SESSION_START = time.time()
+MAX_SESSION_HOURS = 9.0
+CHECKPOINT_INTERVAL_MINUTES = 30
+
+def get_session_status():
+    """Get current session time status."""
+    elapsed = time.time() - SESSION_START
+    elapsed_hours = elapsed / 3600
+    remaining_hours = MAX_SESSION_HOURS - elapsed_hours
+    
+    print(f"⏱️  Session Time Status")
+    print(f"   Started: {datetime.fromtimestamp(SESSION_START).strftime('%H:%M:%S')}")
+    print(f"   Elapsed: {elapsed_hours:.2f} hours ({elapsed/60:.0f} minutes)")
+    print(f"   Remaining: {remaining_hours:.2f} hours ({remaining_hours*60:.0f} minutes)")
+    print(f"   Max Duration: {MAX_SESSION_HOURS} hours")
+    
+    if remaining_hours < 1.0:
+        print("   ⚠️  WARNING: Less than 1 hour remaining!")
+    elif remaining_hours < 0.5:
+        print("   🚨 CRITICAL: Save checkpoint immediately!")
+    
+    return {
+        "elapsed_hours": elapsed_hours,
+        "remaining_hours": remaining_hours,
+        "should_checkpoint": (elapsed / 60) % CHECKPOINT_INTERVAL_MINUTES < 1
+    }
+
+# Call periodically during training
+get_session_status()
+```
+
+### Runtime Estimation Cell
+
+Add before training to estimate if you'll complete within the session:
+
+```python
+def estimate_training_time(
+    num_examples: int,
+    batch_size: int,
+    seconds_per_step: float = 2.0,
+    num_epochs: int = 1
+) -> dict:
+    """Estimate total training time."""
+    total_steps = (num_examples // batch_size) * num_epochs
+    estimated_seconds = total_steps * seconds_per_step
+    estimated_hours = estimated_seconds / 3600
+    
+    fits_session = estimated_hours < 8.5  # Leave 30 min buffer
+    
+    print(f"📊 Training Time Estimate")
+    print(f"   Examples: {num_examples}")
+    print(f"   Batch size: {batch_size}")
+    print(f"   Epochs: {num_epochs}")
+    print(f"   Total steps: {total_steps}")
+    print(f"   Estimated time: {estimated_hours:.2f} hours")
+    print(f"   Fits in session: {'✅ Yes' if fits_session else '❌ No - reduce scope'}")
+    
+    return {
+        "total_steps": total_steps,
+        "estimated_hours": estimated_hours,
+        "fits_session": fits_session
+    }
+
+# Example usage
+estimate_training_time(
+    num_examples=100,
+    batch_size=4,
+    num_epochs=3,
+    seconds_per_step=2.5
+)
+```
 
 ---
 
