@@ -286,6 +286,77 @@ Planned improvements:
 5. Fine-grained task-specific rewards
 6. Real-time training monitoring dashboard
 
+## Advanced Patterns
+
+For advanced optimization and debugging, we maintain reference documentation based on AllenAI's `grpo_fast.py` implementation patterns.
+
+### Reference Documentation
+
+- **[GRPO Fast Patterns](references/grpo_fast_patterns.md)**: Comprehensive documentation of advanced patterns including:
+  - Alternative advantage computation approaches (clipping, centering, MAD normalization)
+  - Loss computation variants (DAPO, CISPO, KL penalties)
+  - Memory optimization techniques
+  - Gradient stability patterns
+  
+- **[Quick Reference Guide](references/grpo_quick_reference.md)**: Practical code examples for common scenarios
+
+### When to Consult Reference Patterns
+
+| Scenario | Recommended Patterns |
+|----------|---------------------|
+| Training instability | Advantage clipping, gradient monitoring |
+| OOM errors | Memory optimization, gradient checkpointing |
+| Poor convergence | Alternative normalization, KL penalties |
+| Debugging | Gradient tracking, loss component logging |
+
+### Important Note
+
+> **The existing judicAIta implementation is sufficient for the Kaggle hackathon requirements.** The advanced patterns are provided for optimization, debugging, and future development. Consult them when:
+> - Training becomes unstable
+> - Memory constraints require optimization
+> - You need to debug specific issues
+> - Extending the implementation beyond hackathon scope
+
+## Using Copilot for GRPO Development
+
+GitHub Copilot is configured with judicAIta-specific context to assist with GRPO development.
+
+### Copilot Configuration
+
+See [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) for the full Copilot configuration.
+
+### How to Reference Patterns in Prompts
+
+When using Copilot, include specific references to trigger pattern-aware suggestions:
+
+```
+"Add advantage clipping following grpo_fast.py patterns"
+"Implement gradient checkpointing like in AllenAI open-instruct"
+"Add KL penalty integration to the loss function"
+```
+
+### Expected Copilot Assistance
+
+Copilot can help with:
+
+1. **Advantage Computation**: Clipping strategies, normalization variants
+2. **Memory Optimization**: Gradient checkpointing, batch processing
+3. **Debugging**: Gradient monitoring, loss validation
+4. **Notebook Development**: TPU initialization, dependency management
+
+### Example Prompts
+
+```
+# For stability issues
+"Add symmetric clipping to _compute_advantages with configurable range"
+
+# For memory issues  
+"Enable gradient checkpointing in GRPOTrainer"
+
+# For debugging
+"Add gradient norm logging before and after clipping"
+```
+
 ## References
 
 - [LegalBench Dataset](https://huggingface.co/datasets/nguha/legalbench)

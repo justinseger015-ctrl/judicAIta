@@ -421,6 +421,36 @@ Judicaita takes security and compliance seriously:
 
 See [SECURITY.md](docs/SECURITY.md) for security policy and reporting vulnerabilities.
 
+## 🤖 GitHub Copilot Integration
+
+Judicaita includes GitHub Copilot configuration for enhanced GRPO development assistance.
+
+### Copilot Configuration
+
+The repository includes [`.github/copilot-instructions.md`](.github/copilot-instructions.md) which provides Copilot with:
+
+- Project context (legal AI, Kaggle hackathon, TPU training)
+- GRPO-specific patterns and best practices
+- Notebook development guidance
+- Debugging and troubleshooting tips
+
+### GRPO Reference Patterns
+
+Advanced GRPO patterns from AllenAI's `grpo_fast.py` are documented for optimization and debugging:
+
+- **[GRPO Fast Patterns](docs/references/grpo_fast_patterns.md)**: Advantage computation, loss variants, memory optimization
+- **[Quick Reference](docs/references/grpo_quick_reference.md)**: Common scenarios with code examples
+
+### For Contributors
+
+When working on GRPO-related code:
+
+1. Reference the pattern documentation for optimization ideas
+2. Use Copilot prompts that mention "grpo_fast.py patterns" for targeted suggestions
+3. Check [`docs/GRPO_TRAINING.md`](docs/GRPO_TRAINING.md) for the Advanced Patterns section
+
+See [`docs/references/`](docs/references/) for complete reference documentation.
+
 ## 🤝 Contributing
 
 We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
