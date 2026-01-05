@@ -345,6 +345,7 @@ For comprehensive troubleshooting covering all phases, see the **[Complete Troub
 
 | Issue | Solution | Guide Section |
 |-------|----------|---------------|
+| `ImportError: cannot import name 'GenerationMixin'` | Transformers version mismatch - see [Issue #35 Solution](#transformers-version-fix) | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#phase-1-environment--dependency-validation) |
 | `ModuleNotFoundError: No module named 'tunix'` | Install from GitHub: `git+https://github.com/google/tunix` | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#phase-1-environment--dependency-validation) |
 | JAX TPU initialization fails | Install from GitHub: `git+https://github.com/jax-ml/jax` | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#14-tpu-detection-validation) |
 | `RuntimeError: TPU not found` | Set runtime to TPU: Runtime → Change runtime type | [Phase 1](docs/COLAB_VALIDATION_GUIDE.md#11-colab-runtime-configuration) |
@@ -355,6 +356,31 @@ For comprehensive troubleshooting covering all phases, see the **[Complete Troub
 ### Expected Warnings (Safe to Ignore)
 
 - **`jax_cuda12_plugin` warnings**: Normal on Google Colab TPU runtime. These appear because Colab has GPU packages pre-installed. They do not affect TPU training.
+
+### Transformers Version Fix
+
+#### Issue: `ImportError: cannot import name 'GenerationMixin'`
+
+**Root Cause:** Version mismatch in the `transformers` library. The `GenerationMixin` class location changed between versions, causing import failures.
+
+**Solution:** The project requires `transformers>=4.40.0,<4.57.1`. This is automatically handled in the `train_tunix_reasoning.ipynb` notebook Cell 7, which force-reinstalls the correct version.
+
+**If you encounter this error:**
+
+1. **In Colab Notebook**: The `train_tunix_reasoning.ipynb` Cell 7 includes automatic fix via force-reinstall:
+   ```python
+   # Note: flax and datasets are co-dependencies required for Gemma model training
+   subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "--upgrade", "--force-reinstall", "transformers>=4.40.0,<4.57.1", "flax>=0.10.2,<0.13.0", "datasets"])
+   ```
+
+2. **After reinstall**: Restart the runtime (Runtime → Restart runtime)
+
+3. **For local development**: Use the corrected `requirements.txt`:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+**Reference:** [GitHub Issue #35](https://github.com/clduab11/judicAIta/issues/35)
 
 ### Complete Troubleshooting
 
