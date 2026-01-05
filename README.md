@@ -10,24 +10,54 @@ Judicaita is an AI companion built with **Google Tunix** and **Gemma3-1B-IT** fo
 
 <img width="2560" height="1440" alt="VeniceAI_sNE72d5_@2x" src="https://github.com/user-attachments/assets/0eab368e-69b0-4b35-8715-7252a04d2301" />
 
+## 🏆 Kaggle Google TuniX Hackathon
+
+This project is developed for the [Google TuniX Hackathon on Kaggle](https://www.kaggle.com/competitions/google-tunix-hackathon). JudicAIta demonstrates GRPO (Group Relative Policy Optimization) training for legal AI, producing explainable reasoning traces in structured XML format. The system fine-tunes Google Gemma models on legal reasoning tasks to generate transparent, auditable legal analysis.
+
+**Submission Deadline**: January 12, 2026
+
+### Competition Submission
+
+- **Primary Training Notebook**: [`examples/notebooks/train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb)
+- **Validation Guide**: [`docs/COLAB_VALIDATION_GUIDE.md`](docs/COLAB_VALIDATION_GUIDE.md) - 4-phase validation process
+- **Submission Checklist**: [`docs/HACKATHON_SUBMISSION_CHECKLIST.md`](docs/HACKATHON_SUBMISSION_CHECKLIST.md)
+- **Submission Record**: [`docs/SUBMISSION_RECORD.md`](docs/SUBMISSION_RECORD.md)
+- **Technical Writeup**: [`docs/hackathon_writeup.md`](docs/hackathon_writeup.md)
+
+### Reward Function
+
+JudicAIta uses a multi-objective reward function with the following weights:
+
+| Component | Weight | Description |
+|-----------|--------|-------------|
+| Correctness | 40% | Accuracy of final legal conclusion |
+| Reasoning Quality | 30% | Structured, logical step-by-step reasoning |
+| Citation Accuracy | 20% | Proper citation format and relevance |
+| Clarity | 10% | Readability and accessibility |
+
+The reward function uses GRPO (Group Relative Policy Optimization) for memory-efficient training on TPU. See [`src/judicaita/training/rewards.py`](src/judicaita/training/rewards.py) and [`docs/hackathon_writeup.md`](docs/hackathon_writeup.md) for implementation details.
 
 ## 🌟 Features
 
-### Core Capabilities
+### Document Processing
+- **PDF & Word Processing**: Extract text from legal documents in PDF and DOCX formats
+- **Citation Extraction**: Identify and parse legal citations (U.S. Code, case law, regulations)
 
-- **📄 Document Processing**: Intelligent extraction from PDF, Word, and other legal document formats
-- **🧠 Reasoning Trace Generation**: Step-by-step explainable AI reasoning for legal analysis
-- **📚 Legal Citation Mapping**: Automatic citation extraction, validation, and relationship mapping
-- **💬 Plain-English Summaries**: Convert complex legal text into accessible summaries at various reading levels
-- **📊 Compliance Audit Logs**: Comprehensive audit trails for transparency and accountability
+### Legal Analysis
+- **Reasoning Trace Generation**: Generate XML-structured reasoning with `<reasoning>` and `<answer>` tags
+- **Citation Validation**: Validate citation format and structure
+- **Query Analysis**: Analyze legal queries with context-aware responses
 
-### Key Advantages
+### Training & Evaluation
+- **GRPO Training**: Train models using Group Relative Policy Optimization on TPU
+- **Multi-objective Rewards**: Composite reward function with correctness, reasoning, citation, and clarity components
+- **LoRA Fine-tuning**: Parameter-efficient fine-tuning of Gemma models
+- **Model Evaluation**: Evaluate trained checkpoints on legal reasoning tasks
 
-- ✅ **Explainable AI**: Every decision includes transparent reasoning traces
-- ✅ **Citation Accuracy**: Automated citation validation and mapping
-- ✅ **Accessibility**: Plain-English summaries make legal content accessible to all
-- ✅ **Compliance-First**: Built-in audit logging for regulatory compliance
-- ✅ **Production-Ready**: Modern architecture following 2025 best practices
+### Infrastructure
+- **CLI Interface**: Seven commands: `process_document`, `analyze_query`, `audit_report`, `validate_citation`, `serve`, `train_grpo`, `evaluate_model`
+- **Docker Support**: Three-service architecture with PostgreSQL and Redis
+- **Configuration**: Environment-based configuration via `.env` files
 
 ## 🚀 Quick Start
 
@@ -63,9 +93,39 @@ cp .env.example .env
 # Edit .env and add your Google API key
 ```
 
-### Usage
+## 🐳 Docker Setup
 
-#### Command Line Interface
+Judicaita provides a three-service Docker architecture for development:
+
+| Service | Image | Purpose |
+|---------|-------|---------|
+| Judicaita App | `judicaita:latest` | Main application container |
+| PostgreSQL 16 | `postgres:16-alpine` | Database storage |
+| Redis 7 | `redis:7-alpine` | Caching layer |
+
+### Docker Commands
+
+```bash
+# Build Docker image
+make docker-build
+
+# Start all services
+make docker-up
+
+# Stop all services
+make docker-down
+
+# View logs
+make docker-logs
+```
+
+**⚠️ Security Warning**: The `docker-compose.yml` contains hardcoded credentials (`POSTGRES_PASSWORD=password`) for development convenience only. **Do not use in production** - use environment variables or a secret management tool like Docker secrets, HashiCorp Vault, or AWS Secrets Manager.
+
+The Docker configuration includes volume mounts for `./data`, `./logs`, and `./uploads` directories for development.
+
+## 📖 Usage
+
+### Command Line Interface
 
 Process a legal document:
 ```bash
@@ -82,12 +142,7 @@ Generate audit report:
 judicaita audit-report --days 30 --output report.md
 ```
 
-Start API server:
-```bash
-judicaita serve --host 0.0.0.0 --port 8000
-```
-
-#### Python API
+### Python API
 
 ```python
 from judicaita.document_input import DocumentInputService
@@ -238,11 +293,11 @@ Before running full training, execute the validation cells in the notebook:
 
 See the [Validation Guide](docs/COLAB_VALIDATION_GUIDE.md) for detailed procedures and troubleshooting.
 
-## 🔧 Training & Fine-tuning
+## 🔧 Training on Google Cloud TPU
 
-### Tunix/TPU Training (Kaggle Hackathon)
+### Primary Hackathon Deliverable
 
-For training Gemma models with GRPO on Google Cloud TPU using the Tunix framework:
+The training notebook is the **primary deliverable** for the Kaggle Google TuniX Hackathon submission.
 
 **Notebook:** [`examples/notebooks/train_tunix_reasoning.ipynb`](examples/notebooks/train_tunix_reasoning.ipynb)
 
@@ -397,6 +452,8 @@ The validation guide includes detailed troubleshooting for:
 
 ## 🧪 Testing
 
+Unit tests exist in `tests/unit/` with 8 test files covering configuration, exceptions, citation parsing, and training components. Integration and end-to-end test directories exist but are currently empty.
+
 Run tests:
 ```bash
 # All tests
@@ -405,19 +462,30 @@ pytest
 # With coverage
 pytest --cov=judicaita
 
-# Specific test type
-pytest -m unit
-pytest -m integration
+# Unit tests only
+pytest tests/unit/ -v
 ```
+
+See [tests/README.md](tests/README.md) for detailed testing documentation.
 
 ## 🛡️ Security & Compliance
 
-Judicaita takes security and compliance seriously:
+Judicaita implements security measures appropriate for legal AI applications:
 
-- **Audit Logging**: All operations are logged for compliance
-- **Data Retention**: Configurable retention policies
-- **Access Control**: Role-based access controls (planned)
-- **Encryption**: Data encryption at rest and in transit (planned)
+**Implemented:**
+- **Input Validation**: Strict validation of all inputs using Pydantic
+- **File Size Limits**: Configurable limits on document upload sizes
+- **Type Safety**: Comprehensive type hints and static type checking
+- **Dependency Management**: Regular updates and security scanning of dependencies
+
+**Configured (pending full implementation):**
+- **Audit Logging**: Audit logging settings are configured but not actively logging in all operations
+- **Compliance Modes**: Data retention settings are defined but not enforced
+
+**Planned:**
+- **Encryption**: Data encryption at rest and in transit
+- **Authentication & Authorization**: JWT-based authentication with role-based access control
+- **Rate Limiting**: API rate limiting to prevent abuse
 
 See [SECURITY.md](docs/SECURITY.md) for security policy and reporting vulnerabilities.
 
@@ -457,7 +525,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
@@ -470,19 +538,6 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 - **Issues**: [GitHub Issues](https://github.com/clduab11/judicAIta/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/clduab11/judicAIta/discussions)
-
-## 🗺️ Roadmap
-
-- [x] Core document processing
-- [x] Reasoning trace generation
-- [x] Citation mapping
-- [x] Plain-English summaries
-- [x] Audit logging
-- [ ] API server implementation
-- [ ] Web UI dashboard
-- [ ] Multi-language support
-- [ ] Advanced citation databases
-- [ ] Real-time collaboration features
 
 ---
 
