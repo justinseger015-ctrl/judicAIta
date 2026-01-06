@@ -221,6 +221,64 @@ def fix_notebook():
     if not found_rollout:
         print("Warning: Could not find RolloutConfig cell")
 
+    # 4. Update SimpleDataset to sanitize strings (Prevent UnicodeEncodeError)
+    new_dataset_code = [
+        "# ========================================================\n",
+        "# Tunix GRPOLearner.train() Loop\n",
+        "# ========================================================\n",
+        "\n",
+        "# Prepare training data\n",
+        'train_prompts = [ex["prompt"] for ex in training_dataset]\n',
+        'val_prompts = [ex["prompt"] for ex in validation_dataset]\n',
+        'train_ground_truth = [ex["ground_truth"] for ex in training_dataset]\n',
+        "\n",
+        'print(f"\\n\\ud83d\\udcca Training Configuration:")\n',
+        'print(f"   Training examples: {len(train_prompts)}")\n',
+        'print(f"   Validation examples: {len(val_prompts)}")\n',
+        "\n",
+        "# Create Dataset Adapter for Tunix\n",
+        "class SimpleDataset:\n",
+        "    def __init__(self, prompts, ground_truths):\n",
+        "        # Sanitize strings to remove surrogates and other problematic chars\n",
+        "        self.prompts = [self._clean(p) for p in prompts]\n",
+        "        self.ground_truths = [self._clean(gt) for gt in ground_truths]\n",
+        "\n",
+        "    def _clean(self, text):\n",
+        "        if not isinstance(text, str):\n",
+        "            return str(text)\n",
+        "        # Encode to unicode_escape to bypass surrogates, then decode back\n",
+        "        # Or force encode utf-8 ignore\n",
+        "        return text.encode('utf-8', 'ignore').decode('utf-8')\n",
+        "\n",
+        "    def __iter__(self):\n",
+        "        for p, gt in zip(self.prompts, self.ground_truths):\n",
+        "            yield {\n",
+        '                "prompts": p,\n',
+        '                "answer": gt\n',
+        "            }\n",
+        "\n",
+        "    def __len__(self):\n",
+        "        return len(self.prompts)\n",
+        "\n",
+        'print("\\u2705 Creating dataset iterator...")\n',
+        "train_dataset = SimpleDataset(train_prompts, train_ground_truth)\n",
+        "\n",
+        'print("\\n\\ud83d\\ude80 Starting GRPO training with grpo_learner.train()...")\n',
+        "# train() handles the loop and logging internally\n",
+        "grpo_learner.train(train_dataset)\n",
+        'print("\\n\\u2705 Training complete!")\n',
+    ]
+
+    found_loop = False
+    for cell in nb["cells"]:
+        if cell["cell_type"] == "code":
+            source = "".join(cell["source"])
+            if "class SimpleDataset:" in source:
+                cell["source"] = new_dataset_code
+                found_loop = True
+                print("Updated SimpleDataset/Training loop cell.")
+                break
+
     if found_reward or found_loop or found_rollout:
         with open(nb_path, "w") as f:
             json.dump(nb, f, indent=1)
