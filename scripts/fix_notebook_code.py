@@ -197,6 +197,14 @@ def fix_notebook():
         "    training_config=training_config,\n",
         "    rollout_config=rollout_config,\n",
         ")\n",
+        'print("   \\u2705 ClusterConfig created")\n',
+        "\n",
+        "rl_cluster = rl_cluster_lib.RLCluster(\n",
+        "    actor=actor_model,\n",
+        "    reference=reference_model,\n",
+        "    tokenizer=tunix_tokenizer,\n",
+        "    cluster_config=cluster_config,\n",
+        ")\n",
         'print("   \\u2705 RLCluster created with vanilla rollout engine")\n',
     ]
 
