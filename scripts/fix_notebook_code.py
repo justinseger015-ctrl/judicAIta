@@ -138,7 +138,38 @@ def fix_notebook():
     if not found_loop:
         print("Warning: Could not find training loop cell")
 
-    if found_reward or found_loop:
+    # 3. Update RolloutConfig to fit cache size (1024)
+    new_rollout_code = [
+        "# ===== Configure RolloutConfig =====\n",
+        'print("\\n\\ud83d\\udd27 Configuring RolloutConfig...")\n',
+        "rollout_config = RolloutConfig(\n",
+        "    max_tokens_to_generate=256,  # Reduced to fit cache size < 1024\n",
+        "    max_prompt_length=768,       # Reduced to fit cache size < 1024\n",
+        "    temperature=0.7,\n",
+        "    top_p=0.9,\n",
+        "    top_k=40,\n",
+        "    eos_tokens=EOS_TOKENS,\n",
+        '    rollout_vllm_tpu_backend_type="jax",\n',
+        "    rollout_vllm_hbm_utilization=0.8,\n",
+        "    rollout_vllm_init_with_random_weights=False,\n",
+        ")\n",
+        'print("   \\u2705 RolloutConfig created:")\n',
+    ]
+
+    found_rollout = False
+    for cell in nb["cells"]:
+        if cell["cell_type"] == "code":
+            source = "".join(cell["source"])
+            if "rollout_config = RolloutConfig" in source:
+                cell["source"] = new_rollout_code
+                found_rollout = True
+                print("Updated RolloutConfig cell.")
+                break
+
+    if not found_rollout:
+        print("Warning: Could not find RolloutConfig cell")
+
+    if found_reward or found_loop or found_rollout:
         with open(nb_path, "w") as f:
             json.dump(nb, f, indent=1)
         print(f"Successfully wrote updates to {nb_path}")
