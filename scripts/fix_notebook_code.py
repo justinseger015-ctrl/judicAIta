@@ -121,9 +121,7 @@ def fix_notebook():
         "\n",
         'print("\\n\\ud83d\\ude80 Starting GRPO training with grpo_learner.train()...")\n',
         "# train() handles the loop and logging internally\n",
-        "grpo_learner.train(\n",
-        "    dataset=train_dataset,\n",
-        ")\n",
+        "grpo_learner.train(train_dataset)\n",
         'print("\\n\\u2705 Training complete!")\n',
     ]
 
